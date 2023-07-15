@@ -36,4 +36,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_python_install_package(${PROJECT_NAME} SCRIPTS_DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS nodes/order_manager.py DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY
+  include
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()
