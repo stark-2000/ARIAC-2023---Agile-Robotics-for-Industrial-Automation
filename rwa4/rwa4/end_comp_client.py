@@ -10,7 +10,10 @@ from ariac_msgs.msg import (
 
 
 class CompetitionEndingClient(Node):
+    '''
+    Class for a node that ends the competition once all orders have been submitted
 
+    '''
     _competition_states = {
         CompetitionStateMsg.IDLE: 'idle',
         CompetitionStateMsg.READY: 'ready',
@@ -20,6 +23,11 @@ class CompetitionEndingClient(Node):
     }
 
     def __init__(self, node_name):
+        '''
+        Constructor function for CompetitionEndingClient class
+
+        Args:  node_name (str):  the name the instantiated node will have
+        '''
         super().__init__(node_name= node_name)
 
         client_cb_group = MutuallyExclusiveCallbackGroup()
@@ -29,18 +37,23 @@ class CompetitionEndingClient(Node):
             Trigger, '/ariac/end_competition', callback_group=client_cb_group)
         
         # Subscriber to the competition state topic
+        # used for determining if state has reached ORDER_ANNOUNCEMENTS_DONE
+        # prints updates to the current state to the CLI
         self._competition_state_sub = self.create_subscription(
             CompetitionStateMsg,
             '/ariac/competition_state',
             self._competition_state_cb,
             10)
         
-        self._manager_sub = self.create_subscription(
+        # Subscriber to the agv_submit topic
+        # the submit_orders_interface will publish to this node when all orders are submitted.
+        self._submission_status_sub = self.create_subscription(
             RosBool,
-            '/manager_idle',
-            self._is_idle_cb,
+            '/agv_submit',
+            self._submission_status_cb,
             10)
         
+        # Timer is checked every one second to see if competition is done.
         self._timer = self.create_timer(1, self._timer_cb)
         
         # Store the state of the competition
@@ -62,8 +75,8 @@ class CompetitionEndingClient(Node):
         self._competition_state = msg.competition_state
 
 
-    def _is_idle_cb(self, msg: RosBool):
-        '''Callback for the topic /manager_idle
+    def _submission_status_cb(self, msg: RosBool):
+        '''Callback for the topic /agv_submit
 
         Arguments:
             msg -- Boolean
@@ -73,14 +86,17 @@ class CompetitionEndingClient(Node):
         
         if msg.data == True:
             self._order_manager_is_idle = True
-            self.get_logger().info('manager state = True')
         else:
             self._order_manager_is_idle = False
-            self.get_logger().info('manager state = False')
         
         
 
     def _timer_cb(self):
+        '''
+        Callback function for the timer
+
+        Checks the state of the competition.  If parameters are met, the _end_competition routine is called.
+        '''
         
         if (self._order_manager_is_idle) and (self._competition_state == CompetitionStateMsg.ORDER_ANNOUNCEMENTS_DONE):
             self.get_logger().info('Ending the competition...')
@@ -89,8 +105,11 @@ class CompetitionEndingClient(Node):
 
 
     def _end_competition(self):
+        '''
+        asyncrinously submits a trigger request to end the competition
+        '''
         
-        request = Trigger.Request
+        request = Trigger.Request()
         future = self._end_competition_client.call_async(request)
         future.add_done_callback(self.future_callback)
 
