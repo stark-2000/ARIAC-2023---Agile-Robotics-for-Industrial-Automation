@@ -11,7 +11,12 @@ def main():
     rclpy.init()
     ariac_end_comp_client  = CompetitionEndingClient("end_comp_client")
 
-    print("test")
+    try:
+        rclpy.spin(ariac_end_comp_client)
+    except KeyboardInterrupt:
+        ariac_end_comp_client.get_logger().info('KeyboardInterrupt, shutting down.\n')
+    ariac_end_comp_client.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":
