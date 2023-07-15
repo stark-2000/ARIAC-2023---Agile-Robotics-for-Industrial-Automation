@@ -13,12 +13,7 @@ def main(args=None):
     """
     rclpy.init(args=args)
     order_manager = OrderManager("order_manager")
-    try:
-
-        order_manager.get_logger().info("Starting order manager node, shut down with CTRL-C")
-        rclpy.spin(order_manager)
-    except KeyboardInterrupt:
-        order_manager.get_logger().warn('Keyboard interrupt, shutting down.\n')
+    rclpy.spin(order_manager)
     order_manager.destroy_node()
     rclpy.shutdown()
 
