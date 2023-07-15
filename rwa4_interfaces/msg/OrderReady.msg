@@ -1,0 +1,2 @@
+string order_id
+uint8 agv_number
