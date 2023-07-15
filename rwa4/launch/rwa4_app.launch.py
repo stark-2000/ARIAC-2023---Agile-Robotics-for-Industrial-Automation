@@ -30,6 +30,12 @@ def generate_launch_description():
         package="rwa4",
         executable="submit_order.py",
     )
+    
+    end_competition_node = Node(
+        package="rwa4",
+        executable="end_comp_client_exe.py"
+    )
+    
 
 
     ld.add_action(service_client_exe_node)
@@ -37,6 +43,6 @@ def generate_launch_description():
     ld.add_action(ship_order_exe_node)
     ld.add_action(service_server_submit_orders_node)
     ld.add_action(submit_order_node)
-
+    ld.add_action(end_competition_node)
     
     return ld
