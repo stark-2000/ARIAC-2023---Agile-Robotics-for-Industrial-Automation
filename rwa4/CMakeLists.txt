@@ -9,7 +9,21 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(ariac_msgs REQUIRED)
+
+include_directories(include)
+
+# Client
+add_executable(ship_order_exe src/shipOrder.cpp)
+ament_target_dependencies(ship_order_exe rclcpp std_srvs std_msgs ariac_msgs)
+
+
+install(TARGETS
+ship_order_exe
+DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
