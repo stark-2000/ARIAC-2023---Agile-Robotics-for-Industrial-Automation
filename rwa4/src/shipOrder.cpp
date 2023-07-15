@@ -1,5 +1,5 @@
 #include <rclcpp/rclcpp.hpp>
-#include "shipOrder.hpp"
+#include "rwa4/shipOrder.hpp"
 
 #include <string>
 #include <chrono>
@@ -18,38 +18,22 @@ using namespace std::chrono_literals;
 shipOrder::shipOrder(const std::string &nodeName) : Node(nodeName){
 
     //Create subscription
-    ship_order_subscriber  = this->create_subscription<std_msgs::msg::Int8>("/ship_order", 10, 
+    ship_order_subscriber  = this->create_subscription<std_msgs::msg::UInt8>("/ship_order", 10, 
     std::bind(&shipOrder::shipOrderCallback, this, std::placeholders::_1));
-
-
-    // rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client_start = this->create_client<std_srvs::srv::Trigger>("/ariac/start_competition");
-    
-    // // Create a request and send it to the server
-    // auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
-    // auto future_result = client_start->async_send_request(request, std::bind(&shipOrder::start_ship_callback, this, std::placeholders::_1));
-    
 }
 
 
-void shipOrder::start_ship_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
-    RCLCPP_INFO(this->get_logger(), "Recieved Ship request.");
-}
+
 
 /**
 * @brief  Callback function for the topic /ship_order
 * 
 * @param msg Integer message containing agv number
 */
-void shipOrder::shipOrderCallback(const std_msgs::msg::Int8::SharedPtr msg){
+void shipOrder::shipOrderCallback(const std_msgs::msg::UInt8::SharedPtr msg){
     
     RCLCPP_INFO(this->get_logger(), "Recieved Ship request.");
     agv_ship_exec(msg->data);
-
-    // rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr client_start = this->create_client<std_srvs::srv::Trigger>("/ariac/start_competition");
-    
-    // // Create a request and send it to the server
-    // auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
-    // auto future_result = client_start->async_send_request(request, std::bind(&shipOrder::start_ship_callback, this, std::placeholders::_1));
 }
 
 
@@ -77,25 +61,25 @@ void shipOrder::agv_ship_exec(uint8_t agv_num){
     switch(agv_num){
         case 1:
         {
-            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv1_ship_callback, this, std::placeholders::_1));
+            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv1_lock_callback, this, std::placeholders::_1));
             break;
         }
 
         case 2:
         {
-            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv2_ship_callback, this, std::placeholders::_1));
+            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv2_lock_callback, this, std::placeholders::_1));
             break;
         }
 
         case 3:
         {
-            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv3_ship_callback, this, std::placeholders::_1));
+            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv3_lock_callback, this, std::placeholders::_1));
             break;
         }
 
         case 4:
         {
-            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv4_ship_callback, this, std::placeholders::_1));
+            auto future_result = client_ship_agv->async_send_request(request, std::bind(&shipOrder::agv4_lock_callback, this, std::placeholders::_1));
             break;
         }
     }
@@ -153,7 +137,18 @@ void shipOrder::agv4_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Move AGV Result: %s!", success_flg.c_str());
     }
     else
     {
@@ -161,12 +156,31 @@ void shipOrder::agv4_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     }
 }
 
-void shipOrder::agv4_ship_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
+void shipOrder::agv4_lock_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
-        agv_move_exec(4);
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Tray Lock Result: %s!", success_flg.c_str());
+        if (success == true)
+        {
+            agv_move_exec(4);
+        }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "AGV Tray Lock Failed!");
+        }
+        
     }
     else
     {
@@ -179,7 +193,18 @@ void shipOrder::agv3_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Move AGV Result: %s!", success_flg.c_str());
     }
     else
     {
@@ -187,12 +212,30 @@ void shipOrder::agv3_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     }
 }
 
-void shipOrder::agv3_ship_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
+void shipOrder::agv3_lock_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
-        agv_move_exec(3);
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Tray Lock Result: %s!", success_flg.c_str());
+        if (success == true)
+        {
+            agv_move_exec(3);
+        }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "AGV Tray Lock Failed!");
+        }
     }
     else
     {
@@ -205,7 +248,18 @@ void shipOrder::agv2_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Move AGV Result: %s!", success_flg.c_str());
     }
     else
     {
@@ -213,12 +267,30 @@ void shipOrder::agv2_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     }
 }
 
-void shipOrder::agv2_ship_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
+void shipOrder::agv2_lock_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
-        agv_move_exec(2);
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Tray Lock Result: %s!", success_flg.c_str());
+        if (success == true)
+        {
+            agv_move_exec(2);
+        }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "AGV Tray Lock Failed!");
+        }
     }
     else
     {
@@ -231,7 +303,18 @@ void shipOrder::agv1_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Move AGV Result: %s!", success_flg.c_str());
     }
     else
     {
@@ -239,12 +322,30 @@ void shipOrder::agv1_move_callback(rclcpp::Client<ariac_msgs::srv::MoveAGV>::Sha
     }
 }
 
-void shipOrder::agv1_ship_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
+void shipOrder::agv1_lock_callback(rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture wait_handle){
     auto status = wait_handle.wait_for(1s);
     if (status == std::future_status::ready)
     {
-        RCLCPP_INFO_STREAM(this->get_logger(), "Result:" << std::to_string(wait_handle.get()->success));
-        agv_move_exec(1);
+        bool success = wait_handle.get()->success;
+        std::string success_flg;
+        if (success == true)
+        {
+            success_flg = "Success";
+        }
+        else 
+        {
+            success_flg = "Failed";
+        }
+        
+        RCLCPP_INFO(this->get_logger(), "Tray Lock Result: %s!", success_flg.c_str());
+        if (success == true)
+        {
+            agv_move_exec(1);
+        }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "AGV Tray Lock Failed!");
+        }
     }
     else
     {

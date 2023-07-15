@@ -4,13 +4,14 @@
   <name>rwa4</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="enpm663@todo.todo">enpm663</maintainer>
-  <license>TODO: License declaration</license>
+  <maintainer email="sbadshah@umd.edu">Shreejay Badshah</maintainer>
+  <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
+  <depend>builtin_interfaces</depend>
   <depend>ariac_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
