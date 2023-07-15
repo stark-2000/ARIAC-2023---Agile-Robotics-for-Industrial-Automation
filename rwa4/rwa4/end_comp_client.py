@@ -38,11 +38,14 @@ class CompetitionEndingClient(Node):
         self._manager_sub = self.create_subscription(
             RosBool,
             '/manager_idle',
-            self._order_manager_cb,
+            self._is_idle_cb,
             10)
+        
+        self._timer = self.create_timer(1, self._timer_cb)
         
         # Store the state of the competition
         self._competition_state: CompetitionStateMsg = None
+        self._order_manager_is_idle: bool = False
 
 
     def _competition_state_cb(self, msg: CompetitionStateMsg):
@@ -59,30 +62,36 @@ class CompetitionEndingClient(Node):
         self._competition_state = msg.competition_state
 
 
-    def _order_manager_cb(self, msg: RosBool):
+    def _is_idle_cb(self, msg: RosBool):
         '''Callback for the topic /manager_idle
 
         Arguments:
             msg -- Boolean
-            True = All orders have been shipped. End competition
+            True = The order manager is idle
+            False = The order manager is handling an order
         '''
-      
+        
         if msg.data == True:
-            self._end_competition()
+            self._order_manager_is_idle = True
+            self.get_logger().info('manager state = True')
         else:
-            self.get_logger().error("Order Manager returned False")
+            self._order_manager_is_idle = False
+            self.get_logger().info('manager state = False')
+        
+        
 
+    def _timer_cb(self):
+        
+        if (self._order_manager_is_idle) and (self._competition_state == CompetitionStateMsg.ORDER_ANNOUNCEMENTS_DONE):
+            self.get_logger().info('Ending the competition...')
+            self._end_competition()
+            
 
 
     def _end_competition(self):
         
-        if self._competition_state == CompetitionStateMsg.ORDER_ANNOUNCEMENTS_DONE:
-            request = Trigger.Request
-            future = self._end_competition_client.call_async(request)
-        else:
-            self.get_logger().info('end_competition called before "order announcements done"')
-            return
-
+        request = Trigger.Request
+        future = self._end_competition_client.call_async(request)
         future.add_done_callback(self.future_callback)
 
 
@@ -93,4 +102,4 @@ class CompetitionEndingClient(Node):
         Args:
             future (Future): A future object
         '''
-        self.get_logger().info(f'Competition Ended')
+        self.get_logger().info(f'Competition Ended!')
