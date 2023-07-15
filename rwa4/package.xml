@@ -6,6 +6,10 @@
   <description>RWA4_CSS_Demo_Kitting-Task_Without_Motion-Planning</description>
   <maintainer email="sbadshah@umd.edu">Shreejay Badshah</maintainer>
   <maintainer email="arshad22@umd.edu">Arshad Shaik</maintainer>
+  <maintainer email="itej89@gmail.com">Tej Kiran</maintainer>
+  <maintainer email="tsweene1@umd.edu">Tim Sweeney</maintainer>
+  <maintainer email="dhinesh@umd.edu">Dhinesh Rajasekaran</maintainer>
+  <maintainer email="Iserbin@umd.edu">Ian Serbin</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
