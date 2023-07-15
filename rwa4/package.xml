@@ -2,9 +2,10 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rwa4</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <version>1.0.0</version>
+  <description>RWA4_CSS_Demo_Kitting-Task_Without_Motion-Planning</description>
   <maintainer email="sbadshah@umd.edu">Shreejay Badshah</maintainer>
+  <maintainer email="arshad22@umd.edu">Arshad Shaik</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
