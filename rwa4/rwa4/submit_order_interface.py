@@ -5,44 +5,6 @@ from ariac_msgs.msg import Order as OrderMsg
 from std_msgs.msg import Bool
 
 
-
-class Service_Server(Node):
-    """
-    This is a class for service server functions for the ariac/submit_order 
-    """
-
-    def __init__(self):
-        """
-        The constructor for initializing the node & creating the service server
-        """
-
-        self.node_name = 'submit_orders'
-        super().__init__(self.node_name)
-
-        #Create service server
-        self.srv = self.create_service(SubmitOrder, 'submit_order_service', self.submit_order_callback)
-        self.get_logger().info('Service created')
-        
-
-    def submit_order_callback(self, request, response):
-        """
-        The callback function for the service server to handle the request & send the response
-
-        Parameters:
-            request (object): The request object received from the client which contains the order_id
-            response (object): The response object to be sent back to the client which contains the success status & message
-        """
-
-        self.get_logger().info('Incoming order request ' + request.order_id)
-        response.success = True
-        response.message = 'Order ' + request.order_id + ' submitted successfully'
-
-        self.get_logger().info('Sending back response: ' + response.message)
-
-        return response
-    
-
-
 class Submit_Orders(Node):
     """
     This is a class for service client functions for the ariac/submit_order, 
@@ -57,8 +19,8 @@ class Submit_Orders(Node):
         self.node_name = 'submit_orders'
         super().__init__(self.node_name)
 
-        #Array to store the order ids and submitted order ids
-        self.order_id_array = []
+        #Dict to store the order ids and Array to store executed agvs
+        self.order_id_array = {}
         self.executed_agvs = []
         
         #Create publisher for order submission status to topic "agv_submit"
@@ -74,7 +36,7 @@ class Submit_Orders(Node):
         
 
         #Create client for service "ariac/submit_order"
-        self.cli = self.create_client(SubmitOrder, 'submit_order_service')
+        self.cli = self.create_client(SubmitOrder, 'SubmitOrder')
         self.req = SubmitOrder.Request()
 
 
@@ -122,7 +84,7 @@ class Submit_Orders(Node):
             order_msg (object): The message object received from the topic which contains the order id
         """
 
-        self.order_id_array.append(order_msg.id)
+        self.order_id_array[order_msg.kitting_task.agv_number] = order_msg.id
 
 
 
@@ -140,17 +102,11 @@ class Submit_Orders(Node):
             return
     
         #if the agv is at the Warehouse, send the request to submit the order
-        if msg.location == 3:
+        if msg.location == AGVStatus.WAREHOUSE:
             self.get_logger().info('AGV ' + str(agv_no) + ' is at the Warehouse')
 
-            if agv_no == 1:
-                self.send_request(self.order_id_array[0]) 
-
-            elif agv_no == 2:
-                self.send_request(self.order_id_array[1])
-
-            elif agv_no == 3:
-                self.send_request(self.order_id_array[2])
+            if agv_no in self.order_id_array:
+                self.send_request(self.order_id_array[agv_no])
             
             self.executed_agvs.append(agv_no) #add the agv to the executed agvs list once the order is submitted
 
