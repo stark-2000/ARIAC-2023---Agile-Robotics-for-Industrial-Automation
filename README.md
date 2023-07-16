@@ -1,4 +1,4 @@
-# RWA4 Assingment 
+# RWA4 Assignment 
 Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
 
 ## Instructions to run RWA4 
