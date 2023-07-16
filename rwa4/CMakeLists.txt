@@ -7,6 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(ariac_msgs REQUIRED)
@@ -46,7 +47,6 @@ SCRIPTS_DESTINATION lib∕${PROJECT_NAME})
 install(PROGRAMS
 	nodes/order_manager.py 
   nodes/submit_order.py
-  nodes/service_server_submit_orders.py
   nodes/end_comp_client_exe.py
 	DESTINATION lib/${PROJECT_NAME}
 )
