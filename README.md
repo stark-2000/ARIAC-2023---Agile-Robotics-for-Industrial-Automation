@@ -1,8 +1,10 @@
-# ENPM663_RWA
-Repo for RWAs of ENPM663
+# RWA4 Assignment 
+Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
 
-Instructions to run RWA4 
-- This project requires two launch files to be launched in different terminals
+## Instructions to run RWA4 
+- This project has one launch file which launches the gazebo launch file and all other c++ and python nodes
+
 - CLI commands:
-    1) ros2 launch ariac_gazebo ariac.launch.py trial_name:=rwa4_summer2023
-    2) ros2 launch rwa4 rwa4_app.launch.py
+    ```
+    ros2 launch rwa4 rwa4_app.launch.py
+    ```
