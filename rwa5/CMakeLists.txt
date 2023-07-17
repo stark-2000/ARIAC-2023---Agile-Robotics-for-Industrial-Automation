@@ -17,18 +17,18 @@ find_package(std_srvs REQUIRED)
 # directories
 include_directories(include)
 
-# # add cpp executable here
-# add_executable()
-# ament_target_dependencies( rclcpp std_srvs ariac_msgs)
+# service client executables
+add_executable(service_client_exe src/service_client.cpp)
+ament_target_dependencies(service_client_exe rclcpp std_srvs ariac_msgs)
 
-# # add cpp executable here
-# add_executable()
-# ament_target_dependencies( rclcpp std_srvs std_msgs ariac_msgs)
+# Client
+add_executable(ship_order_exe src/shipOrder.cpp)
+ament_target_dependencies(ship_order_exe rclcpp std_srvs std_msgs ariac_msgs)
 
 # install targets
 install(TARGETS
-  #
-  #
+  service_client_exe 
+  ship_order_exe
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -44,9 +44,9 @@ SCRIPTS_DESTINATION lib∕${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-	#
-  #
-  #
+	nodes/order_manager.py 
+  nodes/submit_order.py
+  nodes/end_comp_client_exe.py
 	DESTINATION lib/${PROJECT_NAME}
 )
 
