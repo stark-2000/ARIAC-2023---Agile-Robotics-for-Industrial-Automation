@@ -36,6 +36,7 @@ install(TARGETS
 install(DIRECTORY 
   include  
   launch
+  config
   DESTINATION share/${PROJECT_NAME})
 
 # Install Python modules
