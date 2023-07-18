@@ -2,16 +2,10 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import launch.actions
-from launch.substitutions import PathJoinSubstitution
-from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     ld = LaunchDescription()
     pkg_dir = get_package_share_directory('ariac_gazebo')
-
-    node_params = PathJoinSubstitution(
-        [FindPackageShare("rwa5"), "config", "sensor2023.yaml"]
-    )
 
     service_client_exe_node = Node(
         package="rwa5",
