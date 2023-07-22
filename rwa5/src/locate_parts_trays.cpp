@@ -1,6 +1,5 @@
 #include <rclcpp/rclcpp.hpp>
 #include "rwa5/locate_parts_trays.hpp"
-
 #include "rwa5/ariac_constants.hpp"
 #include "rwa5/ariac_tf_util.hpp"
 

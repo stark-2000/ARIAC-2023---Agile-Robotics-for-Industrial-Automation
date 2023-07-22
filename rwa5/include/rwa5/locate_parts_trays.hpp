@@ -1,11 +1,10 @@
 #ifndef __LOCATE_PARTS_TRAYS_HPP
 #define __LOCATE_PARTS_TRAYS_HPP
 
-#include <memory>
-
 #include <rclcpp/rclcpp.hpp>
 #include <ariac_msgs/msg/order.hpp>
 #include <ariac_msgs/msg/advanced_logical_camera_image.hpp>
+#include <memory>
 
 #include "rwa5/ariac_constants.hpp"
 #include "rwa5/ariac_tf_util.hpp"
