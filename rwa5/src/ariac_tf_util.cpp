@@ -1,6 +1,6 @@
-#include "ariac_tf_util.hpp"
+#include "rwa5/ariac_tf_util.hpp"
 
-#include <kdl_frame_demo.hpp>
+// #include <kdl_frame_demo.hpp>
 
 /**
  * @brief Construct a new ariac tf util::ariac tf util object
@@ -8,7 +8,7 @@
  * @param _node node reference
  */
 ariac_tf_util::ariac_tf_util(rclcpp::Node& _node){
-    node = _node;
+    objnode = _node;
 }
 
 
