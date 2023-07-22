@@ -50,10 +50,10 @@
 class ariac_tf_util{
 
     public:
-        ariac_tf_util(rclcpp::Node& _node);
+        ariac_tf_util(rclcpp::Node::SharedPtr ptrNode);
 
 
-        /**
+        /** 
         * @brief Convert Pose to World Frame
         *
         * @param source_frame Source Frame of the Pose
@@ -63,7 +63,7 @@ class ariac_tf_util{
 
 
     private:
-        rclcpp::Node objnode; /*!<a reference to the parent ros node object */
+        std::shared_ptr<rclcpp::Node> _node; /*!<a pointer to the parent ros node object */
 
         std::map<ARIAC_FRAME::NAME, geometry_msgs::msg::Pose> static_tf_to_world_cache; //!< Cache Dictionary to store retrieved static TF data
                                                                                  //!< Used to reduce TF look up time for static frames
@@ -74,8 +74,8 @@ class ariac_tf_util{
         std::shared_ptr<tf2_ros::TransformListener> transform_listener{nullptr}; /*!<Transform listener object  */
 
         /**
-        * @brief Lookup transform between two frames
-        *
+        * @brief Fucntion to look up pose of source frame in tartget frame
+        * 
         * @param ARIAC_FRAME::NAME source_frame - Source frame (child frame) of the transform
         * @param ARIAC_FRAME::NAME target_frame - Target frame (parent frame) of the transform
         * @return geometry_msgs::msg::Pose 
