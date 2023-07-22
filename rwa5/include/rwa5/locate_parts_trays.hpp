@@ -32,8 +32,7 @@ public:
         // initializing the camera image data message for kitting tray2
         m_kitting_tray2_camera = ariac_msgs::msg::AdvancedLogicalCameraImage();
 
-        // auto node_ptr = shared_from_this();
-
+        // ariac trainsform utility for finding pose in world frame
         m_ariac_tf_util = std::make_shared<ariac_tf_util>();
 
         // subscriber callback for Order

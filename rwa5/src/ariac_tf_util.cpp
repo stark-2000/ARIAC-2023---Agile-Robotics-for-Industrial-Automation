@@ -23,13 +23,16 @@ geometry_msgs::msg::Pose ariac_tf_util::lookup_transform(rclcpp::Node::SharedPtr
         //Check if the frame already avaialble in cache
         if (static_tf_to_world_cache.find(source_frame) == static_tf_to_world_cache.end()) {
             
+            RCLCPP_INFO_STREAM(_node->get_logger(), "Not found transform in cache.");
             geometry_msgs::msg::TransformStamped t_stamped;
             geometry_msgs::msg::Pose pose_out;
 
             //Look up the TF tree
             try
             {
+                RCLCPP_INFO_STREAM(_node->get_logger(), "Looking up the tf tree.");
                 t_stamped = tf_buffer->lookupTransform(source_frame, target_frame, tf2::TimePointZero, 50ms);
+                RCLCPP_INFO_STREAM(_node->get_logger(), "Obtained TF.");
             }
             catch (const tf2::TransformException &ex)
             {
@@ -61,6 +64,14 @@ geometry_msgs::msg::Pose ariac_tf_util::lookup_transform(rclcpp::Node::SharedPtr
  * Computes given objects pose in world frame
  */
 geometry_msgs::msg::Pose ariac_tf_util::get_object_pose_world(rclcpp::Node::SharedPtr _node, const ARIAC_FRAME::NAME &source_frame, geometry_msgs::msg::Pose pose){
+
+     if(transform_listener == nullptr){
+        RCLCPP_INFO_STREAM(_node->get_logger(), "TF Buffer Initialize.");
+        tf_buffer =
+            std::make_unique<tf2_ros::Buffer>(_node->get_clock());
+        transform_listener =
+            std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
+     }
 
     geometry_msgs::msg::Pose camera_pose_in_world = this->lookup_transform(_node, source_frame, ARIAC_FRAME::WORLD);
     geometry_msgs::msg::Pose object_pose_in_camera = pose;
