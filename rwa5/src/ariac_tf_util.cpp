@@ -1,14 +1,18 @@
+#include <chrono>
+
+#include <tf2_kdl/tf2_kdl.h>
+
 #include "rwa5/ariac_tf_util.hpp"
 
-// #include <kdl_frame_demo.hpp>
+using namespace std::chrono_literals;
 
 /**
  * @brief Construct a new ariac tf util::ariac tf util object
  * 
  * @param _node node reference
  */
-ariac_tf_util::ariac_tf_util(rclcpp::Node& _node){
-    objnode = _node;
+ariac_tf_util::ariac_tf_util(rclcpp::Node::SharedPtr ptrNode){
+    _node = ptrNode;
 }
 
 
@@ -18,7 +22,7 @@ ariac_tf_util::ariac_tf_util(rclcpp::Node& _node){
 geometry_msgs::msg::Pose ariac_tf_util::lookup_transform(const ARIAC_FRAME::NAME &source_frame, const ARIAC_FRAME::NAME &target_frame){
 
         //Check if the frame already avaialble in cache
-        if (static_tf_to_world_cache.find(source_frame) == tf_to_world_cache.end()) {
+        if (static_tf_to_world_cache.find(source_frame) == static_tf_to_world_cache.end()) {
             
             geometry_msgs::msg::TransformStamped t_stamped;
             geometry_msgs::msg::Pose pose_out;
@@ -26,12 +30,12 @@ geometry_msgs::msg::Pose ariac_tf_util::lookup_transform(const ARIAC_FRAME::NAME
             //Look up the TF tree
             try
             {
-                t_stamped = tf_buffer_->lookupTransform(source_frame, target_frame, tf2::TimePointZero, 50ms);
+                t_stamped = tf_buffer->lookupTransform(source_frame, target_frame, tf2::TimePointZero, 50ms);
             }
             catch (const tf2::TransformException &ex)
             {
-                RCLCPP_ERROR_STREAM(this->get_logger(), "Could not get transform between " << source_frame << " and " << target_frame << ": " << ex.what());
-                return;
+                RCLCPP_ERROR_STREAM(_node->get_logger(), "Could not get transform between " << source_frame << " and " << target_frame << ": " << ex.what());
+                return pose_out;
             }
 
             //Convert to Pose
@@ -47,8 +51,8 @@ geometry_msgs::msg::Pose ariac_tf_util::lookup_transform(const ARIAC_FRAME::NAME
 
     } else {
         //retrieve TF from the static cache
-        geometry_msgs::msg::Pose = static_tf_to_world_cache[source_frame];
-        return Pose;
+        geometry_msgs::msg::Pose pose_out= static_tf_to_world_cache[source_frame];
+        return pose_out;
     }
 }
 
@@ -59,7 +63,7 @@ geometry_msgs::msg::Pose ariac_tf_util::lookup_transform(const ARIAC_FRAME::NAME
  */
 geometry_msgs::msg::Pose ariac_tf_util::get_object_pose_world(const ARIAC_FRAME::NAME &source_frame, geometry_msgs::msg::Pose pose){
 
-    geometry_msgs::msg::Pose camera_pose_in_world = this.lookup_transform(source_frame, ARIAC_FRAME::WORLD);
+    geometry_msgs::msg::Pose camera_pose_in_world = this->lookup_transform(source_frame, ARIAC_FRAME::WORLD);
     geometry_msgs::msg::Pose object_pose_in_camera = pose;
 
     //Multiply frames to get the objects pose in world frame
