@@ -25,10 +25,16 @@ ament_target_dependencies(service_client_exe rclcpp std_srvs ariac_msgs)
 add_executable(ship_order_exe src/shipOrder.cpp)
 ament_target_dependencies(ship_order_exe rclcpp std_srvs std_msgs ariac_msgs)
 
+# Part and Tray
+add_executable(locate_parts_trays_exe src/locate_parts_trays.cpp src/ariac_tf_util.cpp)
+ament_target_dependencies(locate_parts_trays_exe rclcpp std_srvs std_msgs ariac_msgs)
+
+
 # install targets
 install(TARGETS
   service_client_exe 
   ship_order_exe
+  locate_parts_trays_exe
   DESTINATION lib/${PROJECT_NAME}
 )
 

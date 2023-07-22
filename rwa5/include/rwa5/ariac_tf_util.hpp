@@ -40,7 +40,7 @@
 #include <tf2_ros/buffer.h>
 
 
-#include "ariac_constants.cpp"
+#include "ariac_constants.hpp"
 
 
 /**
@@ -50,7 +50,7 @@
 class ariac_tf_util{
 
     public:
-        tf_util(rclcpp::Node& _node);
+        ariac_tf_util(rclcpp::Node& _node);
 
 
         /**
@@ -63,7 +63,7 @@ class ariac_tf_util{
 
 
     private:
-        rclcpp::Node node; /*!<a reference to the parent ros node object */
+        rclcpp::Node objnode; /*!<a reference to the parent ros node object */
 
         std::map<ARIAC_FRAME::NAME, geometry_msgs::msg::Pose> static_tf_to_world_cache; //!< Cache Dictionary to store retrieved static TF data
                                                                                  //!< Used to reduce TF look up time for static frames
@@ -91,4 +91,4 @@ class ariac_tf_util{
         */
         geometry_msgs::msg::Pose multiply_kdl_frames(geometry_msgs::msg::Pose pose1, geometry_msgs::msg::Pose pose2);
 
-}
+};
