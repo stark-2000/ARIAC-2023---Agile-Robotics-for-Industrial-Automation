@@ -50,7 +50,7 @@
 class ariac_tf_util{
 
     public:
-        ariac_tf_util(rclcpp::Node::SharedPtr ptrNode);
+        ariac_tf_util();
 
 
         /** 
@@ -59,11 +59,10 @@ class ariac_tf_util{
         * @param source_frame Source Frame of the Pose
         * @param pose Pose of the object
         */
-        geometry_msgs::msg::Pose get_object_pose_world(const ARIAC_FRAME::NAME &source_frame, geometry_msgs::msg::Pose pose);
+        geometry_msgs::msg::Pose get_object_pose_world(rclcpp::Node::SharedPtr _node, const ARIAC_FRAME::NAME &source_frame, geometry_msgs::msg::Pose pose);
 
 
     private:
-        std::shared_ptr<rclcpp::Node> _node; /*!<a pointer to the parent ros node object */
 
         std::map<ARIAC_FRAME::NAME, geometry_msgs::msg::Pose> static_tf_to_world_cache; //!< Cache Dictionary to store retrieved static TF data
                                                                                  //!< Used to reduce TF look up time for static frames
@@ -80,7 +79,7 @@ class ariac_tf_util{
         * @param ARIAC_FRAME::NAME target_frame - Target frame (parent frame) of the transform
         * @return geometry_msgs::msg::Pose 
         */
-        geometry_msgs::msg::Pose lookup_transform(const ARIAC_FRAME::NAME &source_frame, const ARIAC_FRAME::NAME &target_frame);
+        geometry_msgs::msg::Pose lookup_transform(rclcpp::Node::SharedPtr _node, const ARIAC_FRAME::NAME &source_frame, const ARIAC_FRAME::NAME &target_frame);
 
         /**
         * @brief Finds pose of object in target frame
