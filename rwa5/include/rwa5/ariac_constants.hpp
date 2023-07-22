@@ -45,6 +45,6 @@ namespace ARIAC_FRAME{
     const std::string KTS2_BIN_CAMERA_FRAME = "kts2_bins_camera_frame";
 
     const std::string WORLD = "world";
-};
+}
 
 

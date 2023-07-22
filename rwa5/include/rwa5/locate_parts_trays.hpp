@@ -29,7 +29,8 @@ class LocatePartsTraysNode : public rclcpp::Node {
      // initializing the camera image data message for kitting tray2
      m_kitting_tray2_camera = ariac_msgs::msg::AdvancedLogicalCameraImage();
 
-     _ariac_tf_util = std::make_shared<ariac_tf_util>(*this);
+    auto node_ptr = shared_from_this();
+     _ariac_tf_util = std::make_shared<ariac_tf_util>(node_ptr);
 
      // subscriber callback for Order
      m_order_subscriber = this->create_subscription<ariac_msgs::msg::Order>("/ariac/orders", 10,
