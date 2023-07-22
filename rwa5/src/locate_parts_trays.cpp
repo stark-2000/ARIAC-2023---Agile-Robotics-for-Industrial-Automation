@@ -30,7 +30,7 @@ void LocatePartsTraysNode::left_bin_camera_data_subscriber_callback(ariac_msgs::
         m_left_bin_camera.part_poses.at(i).pose.orientation.z = msg->part_poses.at(i).pose.orientation.z;      
 
        
-        // m_left_bin_camera.part_poses.at(i) 
+        m_left_bin_camera.part_poses.at(i).pose = _ariac_tf_util->get_object_pose_world(ARIAC_FRAME::L_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
     }  
 }
 
