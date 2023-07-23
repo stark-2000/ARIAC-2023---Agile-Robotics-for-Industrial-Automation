@@ -39,10 +39,10 @@ namespace ARIAC_FRAME{
     typedef std::string NAME;
 
     const std::string R_BIN_CAMERA_FRAME = "right_bins_camera_frame";
-    const std::string L_BIN_CAMERA_FRAME = "left_bins_camera_frame";
+    const std::string L_BIN_CAMERA_FRAME =  "left_bins_camera_frame";
 
-    const std::string KTS1_BIN_CAMERA_FRAME = "kts1_bins_camera_frame";
-    const std::string KTS2_BIN_CAMERA_FRAME = "kts2_bins_camera_frame";
+    const std::string KTS1_BIN_CAMERA_FRAME = "kts1_camera_frame";
+    const std::string KTS2_BIN_CAMERA_FRAME = "kts2_camera_frame";
 
     const std::string WORLD = "world";
 }
