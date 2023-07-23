@@ -35,7 +35,7 @@ def generate_launch_description():
     #Launch the launch file from av_server package
     included_launch = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource(
-                pkg_dir + '/launch/ariac.launch.py'), launch_arguments={'competitor_pkg': 'rwa5','sensor_conﬁg': 'sensors2023', 
+                pkg_dir + '/launch/ariac.launch.py'), launch_arguments={'competitor_pkg': 'rwa5', 'sensor_conﬁg': 'sensors2023', 
                                                                         'trial_name': 'rwa5_summer2023'}.items())
 
     ld.add_action(included_launch)

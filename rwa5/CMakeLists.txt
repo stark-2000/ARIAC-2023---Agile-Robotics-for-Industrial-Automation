@@ -25,10 +25,37 @@ ament_target_dependencies(service_client_exe rclcpp std_srvs ariac_msgs)
 add_executable(ship_order_exe src/shipOrder.cpp)
 ament_target_dependencies(ship_order_exe rclcpp std_srvs std_msgs ariac_msgs)
 
+
+# Create a variable for all dependencies
+set(LOCATE_PARTS_TRAYS_DEPENDS
+  rclcpp 
+  std_srvs
+  std_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  orocos_kdl
+  ariac_msgs
+)
+
+
+# Find all dependencies
+foreach(dependency IN ITEMS ${LOCATE_PARTS_TRAYS_DEPENDS})
+  find_package(${dependency} REQUIRED)
+endforeach()
+
+
+# Part and Tray
+add_executable(locate_parts_trays_exe src/locate_parts_trays.cpp src/ariac_tf_util.cpp)
+ament_target_dependencies(locate_parts_trays_exe ${LOCATE_PARTS_TRAYS_DEPENDS})
+
+
 # install targets
 install(TARGETS
   service_client_exe 
   ship_order_exe
+  locate_parts_trays_exe
   DESTINATION lib/${PROJECT_NAME}
 )
 
