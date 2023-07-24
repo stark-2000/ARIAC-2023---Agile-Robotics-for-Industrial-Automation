@@ -1,86 +1,107 @@
 #include <rclcpp/rclcpp.hpp>
-#include <string>
 #include "rwa5/locate_parts_trays.hpp"
 #include "rwa5/ariac_constants.hpp"
 #include "rwa5/ariac_tf_util.hpp"
 
+#include <string>
+
+// implementation of method receive_order
+void LocatePartsTraysNode::receive_order(ariac_msgs::msg::Order::SharedPtr msg){
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Part1 of Order id " << msg->id << ": " << part_type(msg->kitting_task.parts.at(0).part.color) + " " +
+                                                                                      part_type(msg->kitting_task.parts.at(0).part.type));
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Part2 of Order id " << msg->id << ": " << part_type(msg->kitting_task.parts.at(1).part.color) + " " +
+                                                                                      part_type(msg->kitting_task.parts.at(1).part.type));
+
+}
+
 // implementation of method left_bin_camera_data_subscriber_callback
 void LocatePartsTraysNode::left_bin_camera_data_subscriber_callback(ariac_msgs::msg::AdvancedLogicalCameraImage::SharedPtr msg){
 
-    m_left_bin_camera.part_poses = std::vector<ariac_msgs::msg::PartPose>(msg->part_poses.size());
+    RCLCPP_INFO_STREAM(this->get_logger(), "left_bin_camera_data_subscriber_callback");
+    m_left_bin_camera.part_poses = std::vector<ariac_msgs::msg::PartPose>(4);
     
-    if (m_left_bin_camera_data_bool){
-        for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
-            
-            RCLCPP_INFO_STREAM(this->get_logger(), "left_bin_camera_data_subscriber_callback");
-            m_left_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
-            m_left_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
-            m_left_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::R_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
-        }
+    for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
 
-        // publish camera data
-        m_left_bin_camera_publisher->publish(m_left_bin_camera);
-        m_left_bin_camera_data_bool = false;
-    }
+        m_left_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
+        m_left_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
+        m_left_bin_camera.part_poses.at(i).pose.position.x = msg->part_poses.at(i).pose.position.x;
+        m_left_bin_camera.part_poses.at(i).pose.position.y = msg->part_poses.at(i).pose.position.y;
+        m_left_bin_camera.part_poses.at(i).pose.position.z = msg->part_poses.at(i).pose.position.z;
+        m_left_bin_camera.part_poses.at(i).pose.orientation.w = msg->part_poses.at(i).pose.orientation.w;
+        m_left_bin_camera.part_poses.at(i).pose.orientation.x = msg->part_poses.at(i).pose.orientation.x;
+        m_left_bin_camera.part_poses.at(i).pose.orientation.y = msg->part_poses.at(i).pose.orientation.y;
+        m_left_bin_camera.part_poses.at(i).pose.orientation.z = msg->part_poses.at(i).pose.orientation.z;    
+          
+        m_left_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::L_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
+    }  
 }
 
 // implementation of method right_bin_camera_data_subscriber_callback
 void LocatePartsTraysNode::right_bin_camera_data_subscriber_callback(ariac_msgs::msg::AdvancedLogicalCameraImage::SharedPtr msg){
 
-    m_right_bin_camera.part_poses = std::vector<ariac_msgs::msg::PartPose>(msg->part_poses.size());
+    RCLCPP_INFO_STREAM(this->get_logger(), "right_bin_camera_data_subscriber_callback");
+    m_right_bin_camera.part_poses = std::vector<ariac_msgs::msg::PartPose>(4);
     
-    if (m_right_bin_camera_data_bool){
-        for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
-            
-            RCLCPP_INFO_STREAM(this->get_logger(), "right_bin_camera_data_subscriber_callback");
-            m_right_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
-            m_right_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
-            m_right_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::R_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
-        }
+    for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
 
-        // publish camera data
-        m_right_bin_camera_publisher->publish(m_right_bin_camera);
-        m_right_bin_camera_data_bool = false;
-
-    }
+        m_right_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
+        m_right_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
+        m_right_bin_camera.part_poses.at(i).pose.position.x = msg->part_poses.at(i).pose.position.x;
+        m_right_bin_camera.part_poses.at(i).pose.position.y = msg->part_poses.at(i).pose.position.y;
+        m_right_bin_camera.part_poses.at(i).pose.position.z = msg->part_poses.at(i).pose.position.z;
+        m_right_bin_camera.part_poses.at(i).pose.orientation.w = msg->part_poses.at(i).pose.orientation.w;
+        m_right_bin_camera.part_poses.at(i).pose.orientation.x = msg->part_poses.at(i).pose.orientation.x;
+        m_right_bin_camera.part_poses.at(i).pose.orientation.y = msg->part_poses.at(i).pose.orientation.y;
+        m_right_bin_camera.part_poses.at(i).pose.orientation.z = msg->part_poses.at(i).pose.orientation.z;
+        
+       m_right_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::R_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
+    }  
 }
 
 // implementation of method kitting_tray1_camera_data_subscriber_callback
 void LocatePartsTraysNode::kitting_tray1_camera_data_subscriber_callback(ariac_msgs::msg::AdvancedLogicalCameraImage::SharedPtr msg){
 
+    RCLCPP_INFO_STREAM(this->get_logger(), "kitting_tray1_camera_data_subscriber_callback");
     m_kitting_tray1_camera.tray_poses = std::vector<ariac_msgs::msg::KitTrayPose>(msg->tray_poses.size());
     
-    if (m_kitting_tray1_camera_data_bool){
-        for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
-            
-            RCLCPP_INFO_STREAM(this->get_logger(), "kitting_tray1_camera_data_subscriber_callback");
-            m_kitting_tray1_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS1_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
-        }
+    for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
 
-        // publish camera data
-        m_kitting_tray1_camera_publisher->publish(m_kitting_tray1_camera);
-        m_kitting_tray1_camera_data_bool = false;
-    }
+        m_kitting_tray1_camera.tray_poses.at(i).pose.position.x = msg->tray_poses.at(i).pose.position.x;
+        m_kitting_tray1_camera.tray_poses.at(i).pose.position.y = msg->tray_poses.at(i).pose.position.y;
+        m_kitting_tray1_camera.tray_poses.at(i).pose.position.z = msg->tray_poses.at(i).pose.position.z;
+        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.w = msg->tray_poses.at(i).pose.orientation.w;
+        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.x = msg->tray_poses.at(i).pose.orientation.x;
+        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.y = msg->tray_poses.at(i).pose.orientation.y;
+        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.z = msg->tray_poses.at(i).pose.orientation.z;
+
+       m_kitting_tray1_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS1_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
+        
+    }  
 }
 
 // implementation of method kitting_tray2_camera_data_subscriber_callback
 void LocatePartsTraysNode::kitting_tray2_camera_data_subscriber_callback(ariac_msgs::msg::AdvancedLogicalCameraImage::SharedPtr msg){
- 
-    m_kitting_tray2_camera.tray_poses = std::vector<ariac_msgs::msg::KitTrayPose>(msg->tray_poses.size());
 
-    if (m_kitting_tray2_camera_data_bool){
-        for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
-            
-            RCLCPP_INFO_STREAM(this->get_logger(), "kitting_tray2_camera_data_subscriber_callback");
-            m_kitting_tray2_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS2_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
-        }
+    m_kitting_tray2_camera.tray_poses.resize(m_kitting_tray2_camera.tray_poses.size()+msg->tray_poses.size(), ariac_msgs::msg::KitTrayPose());
 
-        // publish camera data
-        m_kitting_tray2_camera_publisher->publish(m_kitting_tray2_camera);
-        m_kitting_tray2_camera_data_bool = false;
-    }
+    RCLCPP_INFO_STREAM(this->get_logger(), "kitting_tray2_camera_data_subscriber_callback. new size : "<<std::to_string(m_kitting_tray2_camera.tray_poses.size()));
+
+    for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
+
+        m_kitting_tray2_camera.tray_poses.at(i).pose.position.x = msg->tray_poses.at(i).pose.position.x;
+        m_kitting_tray2_camera.tray_poses.at(i).pose.position.y = msg->tray_poses.at(i).pose.position.y;
+        m_kitting_tray2_camera.tray_poses.at(i).pose.position.z = msg->tray_poses.at(i).pose.position.z;
+        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.w = msg->tray_poses.at(i).pose.orientation.w;
+        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.x = msg->tray_poses.at(i).pose.orientation.x;
+        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.y = msg->tray_poses.at(i).pose.orientation.y;
+        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.z = msg->tray_poses.at(i).pose.orientation.z;
+
+       m_kitting_tray2_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS2_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
+        
+    }  
 }
-
 
 // implementation of method part_type
 std::string LocatePartsTraysNode::part_type(uint8_t literal_part_type){

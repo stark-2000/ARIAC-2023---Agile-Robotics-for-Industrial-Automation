@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rclpy
-from rwa5.end_comp_client import CompetitionEndingClient
+from rwa4.end_comp_client import CompetitionEndingClient
 
 
 def main():
