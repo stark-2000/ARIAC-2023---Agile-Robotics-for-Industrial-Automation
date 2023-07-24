@@ -17,6 +17,11 @@ def generate_launch_description():
         executable="order_manager.py",
     )
 
+    locate_parts_trays_node = Node(
+        package="rwa5",
+        executable="locate_parts_trays_exe"
+    )
+
     ship_order_exe_node = Node(
         package="rwa5",
         executable="ship_order_exe",
@@ -41,6 +46,7 @@ def generate_launch_description():
     ld.add_action(included_launch)
     ld.add_action(service_client_exe_node)
     ld.add_action(order_manager_node)
+    ld.add_action(locate_parts_trays_node)
     ld.add_action(ship_order_exe_node)
     ld.add_action(submit_order_node)
     ld.add_action(end_competition_node)
