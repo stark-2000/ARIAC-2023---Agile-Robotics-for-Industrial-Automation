@@ -1,7 +1,7 @@
-# RWA4 Assignment 
+# RWA5 Assignment 
 Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
 
-## Instructions to run RWA4 
+## Instructions to run RWA5
 - This project has one launch file which launches the gazebo launch file and all other c++ and python nodes
 
 - CLI commands:
