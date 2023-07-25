@@ -4,7 +4,6 @@ import rclpy
 from rwa5.orders_interface import OrderManager
 from rclpy.executors import MultiThreadedExecutor
 
-
 def main(args=None):
     """
     Program to run an OrderPublisher Node
