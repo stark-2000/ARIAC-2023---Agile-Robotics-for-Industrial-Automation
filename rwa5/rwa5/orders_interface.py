@@ -224,4 +224,4 @@ class OrderManager(Node):
         @return None
         """
 
-        self.get_logger().info("Changing to " + gripper_type + " at table: " + table_name)
+        self.get_logger().info("Changing to " + gripper_type + " at " + table_name)
