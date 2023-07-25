@@ -3,7 +3,9 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import UInt8
 from ariac_msgs.msg import Order as OrderMsg, AdvancedLogicalCameraImage as ALCImage
+from ariac_msgs.srv import ChangeGripper
 from enum import Enum
+from functools import partial
 
 class GripperTypes(Enum):
     TRAY_GRIPPER = 'tray gripper'
@@ -212,5 +214,108 @@ class OrderManager(Node):
                self.get_logger().fatal(f"Part not found. Can not complete order {order.order_id}")
                return False
             self.place_part(order_part.color, order_part.type, order_part.quadrant)
+    
+class ChangeGripperClientNode(Node):
+    """! The Change Gripper Client base class
+    Defines the client to the server - Change Gripper
+    """
 
+    def __init__(self, node_name, table_name : TrayStations, gripper_type : GripperTypes):
+        """! The ChangeGripperClient base class initializer
+
+        @param table_name   The station name or table name in which tray is located; of type: TrayStations
+        @param gripper_type The type of the gripper - part gripper or tray gripper; of type: GripperTypes
+
+        @return  An instance of the class initialized with the specified name.
+        """
+        super().__init__(node_name)
+        self.table_name = table_name
+        self.gripper_type = gripper_type
+        self.call_change_gripper_server()
+
+    def call_change_gripper_server(self):
+        """! calls a service - ChangeGripper - format: "call_servicename_server"
+
+        @param None
+
+        @return None
+        """
+        
+        # Create a client to request the "ChangeGripper" type of service.
+        # Service Type: ChangeGripper
+        # Service Name: change_gripper
+        client = self.create_client(ChangeGripper, "change_gripper")
+
+
+        # Create a loop that waits for the service server to become available. 
+        # Use client.wait_for_service(1.0) to wait for up to 1 second for the service to be ready. 
+        # If the service is not available within that time, display a warning message using self.get_logger().warn()
+        while not client.wait_for_service(1.0):
+            self.get_logger().warn("Waiting for server - ChangeGripper")
+        
+        # Create a instance of the service request and provide inputs in the request
+        request = ChangeGripper.Request()
+        request.gripper_type = self.gripper_type
+
+        # Call the service asynchronously using client.call_async(), 
+        # passing the previously created request message. 
+        # Return a Future object, which represents the result of the asynchronous call.
+        future = client.call_async(request)
+        # Add a callback function, to be executed when the service call is completed (whether successfully or with an error). 
+        # The partial function is used to pass additional arguments {table_name, gripper_type} to the callback function.
+        future.add_done_callback(partial(self.callback_change_gripper, table_name=self.table_name, gripper_type=self.gripper_type))
+
+    def callback_change_gripper(self, future, gripper_type, table_name):
+        """! callback to a service - ChangeGripper - format: "call_servicename_server"
+
+        @param future       The future object, which represents result of async call
+        @param table_name   The station name or table name in which tray is located; of type: TrayStations
+        @param gripper_type The type of the gripper - part gripper or tray gripper; of type: GripperTypes
+
+        @return None
+        """
+
+        # Use 'try - except' to handle possible potential exceptions during the service call
+        # The try-except block is a way to gracefully handle these situations and prevent the program from crashing.
+        try:
+            # Retrieve the result of the service call from the Future object and display
+            response = future.result()
+            self.get_logger().info("Changing to " + str(gripper_type) + " at table: " + str(table_name) + 
+                                   "\nMessage from Server: " + response.message +
+                                   "\nService Success: " + response.success)
+        # If there was an exception during the service call, 
+        # this block will catch it and log an error using self.get_logger().error(), 
+        # along with the specific exception message (e)
+        except Exception as e:
+            self.get_logger().error("Service call - change_gripper - failed %r" % (e,))
+
+
+class ChangeGripperServer(Node):
+    """! The Change Gripper Server base class
+    Defines the server - ChangeGripper
+    """
+    def __init__(self, node_name):
+        """! The ChangeGripperClient base class initializer
+
+        @param node_name The name of the node
+
+        @return  An instance of the class initialized with the specified name.
+        """
+        super().__init__(node_name)
+        self.server_ = self.create_service(ChangeGripper, "change_gripper", self.callback_change_gripper)
+        self.get_logger().info("ChangeGripper server has been started!")
+
+    def callback_change_gripper(self, request, response):
+        """! callback to a service - ChangeGripper"
+
+        @param request      The request argument to the service
+
+        @return response    The response from the service
+        """
+
+        response.success = True
+        response.message = "Changing to " + str(request.gripper_type)
+        self.get_logger().info("Changing to " + str(request.gripper_type))
+
+        return response
     
