@@ -6,5 +6,5 @@ Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
 
 - CLI commands:
     ```
-    ros2 launch rwa4 rwa4_app.launch.py
+    ros2 launch rwa5 rwa5_app.launch.py
     ```
