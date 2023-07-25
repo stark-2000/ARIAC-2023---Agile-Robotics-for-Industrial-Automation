@@ -5,20 +5,19 @@
 #include <ariac_msgs/msg/order.hpp>
 #include <ariac_msgs/msg/advanced_logical_camera_image.hpp>
 #include <memory>
+#include <map>
+#include <vector>
+#include <geometry_msgs/msg/pose.hpp>
 
 #include "rwa5/ariac_constants.hpp"
 #include "rwa5/ariac_tf_util.hpp"
 
-class LocatePartsTraysNode : public rclcpp::Node
-{
+class LocatePartsTraysNode : public rclcpp::Node {
 
 public:
     // default ctor
     LocatePartsTraysNode(std::string node_name) : Node(node_name)
     {
-
-        // initializing order message from ariac
-        m_order = ariac_msgs::msg::Order();
 
         // initializing the camera image data message for the left bin
         m_left_bin_camera = ariac_msgs::msg::AdvancedLogicalCameraImage();
@@ -32,48 +31,58 @@ public:
         // initializing the camera image data message for kitting tray2
         m_kitting_tray2_camera = ariac_msgs::msg::AdvancedLogicalCameraImage();
 
+        // initializing the bool value to check if the left bin camera subscriber has received the message
+        m_left_bin_camera_data_bool = true;
+
+        // initializing the bool value to check if the right bin camera subscriber has received the message
+        m_right_bin_camera_data_bool = true;
+
+        // initializing the bool value to check if the kitting tray1 camera subscriber has received the message
+        m_kitting_tray1_camera_data_bool = true;
+
+        // initializing the bool value to check if the kitting tray2 camera subscriber has received the message
+        m_kitting_tray2_camera_data_bool = true;
+
         // ariac trainsform utility for finding pose in world frame
         m_ariac_tf_util = std::make_shared<ariac_tf_util>();
 
-        // subscriber callback for Order
-        m_order_subscriber = this->create_subscription<ariac_msgs::msg::Order>("/ariac/orders", 10,
-                                                                               std::bind(&LocatePartsTraysNode::receive_order,
-                                                                                         this, std::placeholders::_1));
-
-        // subscriber callback for AdvancedLogicalCameraImage of left bin
-        m_left_bin_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/left_bins_camera/image",
-                                                                                                              rclcpp::SensorDataQoS(),
+        // subscriber for AdvancedLogicalCameraImage of left bin camera data
+        m_left_bin_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/left_bins_camera/image", rclcpp::SensorDataQoS(),
                                                                                                               std::bind(&LocatePartsTraysNode::left_bin_camera_data_subscriber_callback,
                                                                                                                         this, std::placeholders::_1));
 
-        // subscriber callback for AdvancedLogicalCameraImage of right bin
-        m_right_bin_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/right_bins_camera/image",
-                                                                                                               rclcpp::SensorDataQoS(),
+        // subscriber for AdvancedLogicalCameraImage of right bin camera data
+        m_right_bin_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/right_bins_camera/image", rclcpp::SensorDataQoS(),
                                                                                                                std::bind(&LocatePartsTraysNode::right_bin_camera_data_subscriber_callback,
                                                                                                                          this, std::placeholders::_1));
 
-        // subscriber callback for AdvancedLogicalCameraImage of kitting tray1
-        m_kitting_tray1_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/kts1_camera/image",
-                                                                                                                   rclcpp::SensorDataQoS(),
+        // subscriber for AdvancedLogicalCameraImage of kitting tray1 camera data
+        m_kitting_tray1_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/kts1_camera/image", rclcpp::SensorDataQoS(),
                                                                                                                    std::bind(&LocatePartsTraysNode::kitting_tray1_camera_data_subscriber_callback,
                                                                                                                              this, std::placeholders::_1));
 
-        // subscriber callback for AdvancedLogicalCameraImage of kitting tray2
-        m_kitting_tray2_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/kts2_camera/image",
-                                                                                                                   rclcpp::SensorDataQoS(),
+        // subscriber for AdvancedLogicalCameraImage of kitting tray2 camera data
+        m_kitting_tray2_camera_subscriber = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>("/ariac/sensors/kts2_camera/image", rclcpp::SensorDataQoS(),
                                                                                                                    std::bind(&LocatePartsTraysNode::kitting_tray2_camera_data_subscriber_callback,
                                                                                                                              this, std::placeholders::_1));
+        
+        // publisher of left bin camera data
+        m_left_bin_camera_publisher = this->create_publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>("/left_bin_camera_data", rclcpp::SensorDataQoS());
+        
+        // publisher of right bin camera data
+        m_right_bin_camera_publisher = this->create_publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>("/right_bin_camera_data", rclcpp::SensorDataQoS());                          
+        
+        // publisher of kitting tray1 camera data
+        m_kitting_tray1_camera_publisher = this->create_publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>("/kitting_tray1_camera_data", rclcpp::SensorDataQoS());
+        
+        // publisher of kitting tray2 camera data
+        m_kitting_tray2_camera_publisher = this->create_publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>("/kitting_tray2_camera_data", rclcpp::SensorDataQoS());
+
     }
 
 private:
+
     // attributes
-
-    /**
-     * @brief Object of Order for ariac orders
-     *
-     */
-    ariac_msgs::msg::Order m_order;
-
     /**
      * @brief Object of AdvancedLogicalCamera for the left bin
      *
@@ -129,28 +138,52 @@ private:
     rclcpp::Subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>::SharedPtr m_kitting_tray2_camera_subscriber;
 
     /**
-     * @brief Shared pointer to create_timer object for the left bin
-     *
+     * @brief Bool value to check if the left bin camera subscriber has received the message
+     * 
      */
-    rclcpp::TimerBase::SharedPtr m_left_bin_timer;
+    bool m_left_bin_camera_data_bool;
 
     /**
-     * @brief Shared pointer to create_timer object for the right bin
-     *
+     * @brief Bool value to check if the right bin camera subscriber has received the message
+     * 
      */
-    rclcpp::TimerBase::SharedPtr m_right_bin_timer;
+    bool m_right_bin_camera_data_bool;
 
     /**
-     * @brief Shared pointer to create_timer object for the kitting tray1
-     *
+     * @brief Bool value to check if the kitting tray1 camera subscriber has received the message
+     * 
      */
-    rclcpp::TimerBase::SharedPtr m_kitting_tray1_timer;
+    bool m_kitting_tray1_camera_data_bool;
 
     /**
-     * @brief Shared pointer to create_timer object for the kitting tray2
-     *
+     * @brief Bool value to check if the kitting tray2 camera subscriber has received the message
+     * 
      */
-    rclcpp::TimerBase::SharedPtr m_kitting_tray2_timer;
+    bool m_kitting_tray2_camera_data_bool;
+
+    /**
+     * @brief Shared pointer to create_publisher object of AdvancedLogicalCameraImage for the left bin camera data
+     * 
+     */
+    rclcpp::Publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>::SharedPtr m_left_bin_camera_publisher;
+
+    /**
+     * @brief Shared pointer to create_publisher object of AdvancedLogicalCameraImage for the right bin camera data
+     * 
+     */
+    rclcpp::Publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>::SharedPtr m_right_bin_camera_publisher;
+
+    /**
+     * @brief Shared pointer to create_publisher object of AdvancedLogicalCameraImage for the kitting tray1 camera data
+     * 
+     */
+    rclcpp::Publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>::SharedPtr m_kitting_tray1_camera_publisher;
+
+    /**
+     * @brief Shared pointer to create_publisher object of AdvancedLogicalCameraImage for the kitting tray2 camera data
+     * 
+     */
+    rclcpp::Publisher<ariac_msgs::msg::AdvancedLogicalCameraImage>::SharedPtr m_kitting_tray2_camera_publisher;
 
     /**
      * @brief Shared pointer to ariac_tf_util
@@ -159,13 +192,6 @@ private:
     std::shared_ptr<ariac_tf_util> m_ariac_tf_util;
 
     // methods
-    /**
-     * @brief Subscriber to Order
-     *
-     * @param msg Shared pointer to msg object
-     */
-    void receive_order(ariac_msgs::msg::Order::SharedPtr msg);
-
     /**
      * @brief Subscriber to AdvancedLogicalCameraImage for the left bin
      *
