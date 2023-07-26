@@ -4,7 +4,6 @@
 // implementation of method competition_state_subscriber_callback
 void ServiceClientNode::competition_state_subscriber_callback(ariac_msgs::msg::CompetitionState::SharedPtr msg){
     if (msg->competition_state == ariac_msgs::msg::CompetitionState::READY){
-        RCLCPP_INFO_STREAM(this->get_logger(), "Competition started");
         m_competition_state = true;
         call_competition_service();
     }
