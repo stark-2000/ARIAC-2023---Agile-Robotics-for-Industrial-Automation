@@ -243,14 +243,14 @@ class OrderManager(Node):
             part_found = False
             for item in self._left_bin_inventory:
                 if item.part == order_part.part:
-                    self.pickup_part(
+                    self.pick_up_part(
                         item.part.color, item.part.type, item.pose)
                     part_found = True
                     break
             if not part_found:
                 for item in self._right_bin_inventory:
                     if item.part == order_part.part:
-                        self.pickup_part(
+                        self.pick_up_part(
                             item.part.color, item.part.type, item.pose)
                         part_found = True
                         break
@@ -258,7 +258,7 @@ class OrderManager(Node):
                 self.get_logger().fatal(
                     f"Part not found. Can not complete order {order.order_id}")
                 return False
-            self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
+            self.place_part(order_part.part.color, order_part.part.type,
                             order_part.quadrant)
         self.complete_order()
 
@@ -270,22 +270,37 @@ class OrderManager(Node):
 
         @return None
         """
-
-        self.get_logger().info(
-            f'Changing to {gripper_type.value} at {table_name.value}')
+        
+        self.get_logger().info(f'Changing to {gripper_type.value} at {table_name.value}')
         return
 
+
     def pick_up_tray(self, id, pose):
-        self.get_logger().info(
-            'pick tray')
-        return True
+        """
+        Function for picking up a tray
+        
+        Parameters:
+            id (int): The id of the tray to be picked up
+            pose (Pose): The pose of the tray to be picked up
+        """
+
+        self.get_logger().info(f'Picking up tray' + str(id) + 'at' + str(pose))
+
 
     def place_tray(self, id, agv):
-        self.get_logger().info(
-            'place tray')
-        return True
+        """
+        Function for placing a tray
 
-    def pickup_part(self, color: int, part_type: int, pose: Pose):
+        Parameters:
+            id (int): The id of the tray to be placed
+            agv (int): The agv to place the tray on
+        """
+        
+        self.get_logger().info(f'Placing tray' + str(id) + 'on agv' + str(agv))
+
+
+
+    def pickup_part(self, color:int, type:int, pose:Pose):
         '''
         Function for picking up a part
         input: color - the color of the part to be picked up
@@ -309,23 +324,23 @@ class OrderManager(Node):
         else:
             color_str = "ERROR"
 
-        if part_type == Part.BATTERY:
+        if type == Part.BATTERY:
             type_str = "BATTERY"
-        elif part_type == Part.PUMP:
+        elif type == Part.PUMP:
             type_str = "PUMP"
-        elif part_type == Part.SENSOR:
+        elif type == Part.SENSOR:
             type_str = "SENSOR"
-        elif part_type == Part.REGULATOR:
+        elif type == Part.REGULATOR:
             type_str = "REGULATOR"
         else:
-            type_str = "ERROR"
+            type_str ="ERROR"
 
-        self.get_logger().info(
-            f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
+        self.get_logger().info(f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
 
         return True
 
-    def place_part(self, color: int, part_type: int, tray_id: int, quadrant: int):
+    
+    def place_part(self, color:int, type:int, tray_id:int, quadrent:int):
         '''
         Function for placing a part
         input: color - the color of the part to be picked up
@@ -351,18 +366,17 @@ class OrderManager(Node):
         else:
             color_str = "ERROR"
 
-        if part_type == Part.BATTERY:
+        if type == Part.BATTERY:
             type_str = "BATTERY"
-        elif part_type == Part.PUMP:
+        elif type == Part.PUMP:
             type_str = "PUMP"
-        elif part_type == Part.SENSOR:
+        elif type == Part.SENSOR:
             type_str = "SENSOR"
-        elif part_type == Part.REGULATOR:
+        elif type == Part.REGULATOR:
             type_str = "REGULATOR"
         else:
-            type_str = "ERROR"
+            type_str ="ERROR"
 
-        self.get_logger().info(
-            f"Placing {color_str} {type_str} in quadrant {quadrant} in tray {tray_id}")
+        self.get_logger().info(f"Placing {color_str} {type_str} in quadrant {quadrent} in tray {tray_id}")
 
         return True
