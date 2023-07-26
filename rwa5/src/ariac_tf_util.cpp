@@ -31,7 +31,7 @@ geometry_msgs::msg::Pose ariac_tf_util::lookup_transform(rclcpp::Node::SharedPtr
             try
             {
                 RCLCPP_INFO_STREAM(_node->get_logger(), "Looking up the tf tree.");
-                t_stamped = tf_buffer->lookupTransform(source_frame, target_frame, tf2::TimePointZero, 50ms);
+                t_stamped = tf_buffer->lookupTransform(target_frame, source_frame, tf2::TimePointZero, 50ms);
                 RCLCPP_INFO_STREAM(_node->get_logger(), "Obtained TF.");
             }
             catch (const tf2::TransformException &ex)
