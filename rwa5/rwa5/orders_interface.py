@@ -243,14 +243,14 @@ class OrderManager(Node):
             part_found = False
             for item in self._left_bin_inventory:
                 if item.part == order_part.part:
-                    self.pick_up_part(
+                    self.pickup_part(
                         item.part.color, item.part.type, item.pose)
                     part_found = True
                     break
             if not part_found:
                 for item in self._right_bin_inventory:
                     if item.part == order_part.part:
-                        self.pick_up_part(
+                        self.pickup_part(
                             item.part.color, item.part.type, item.pose)
                         part_found = True
                         break
@@ -258,7 +258,7 @@ class OrderManager(Node):
                 self.get_logger().fatal(
                     f"Part not found. Can not complete order {order.order_id}")
                 return False
-            self.place_part(order_part.part.color, order_part.part.type,
+            self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
                             order_part.quadrant)
         self.complete_order()
 
@@ -270,8 +270,9 @@ class OrderManager(Node):
 
         @return None
         """
-        
-        self.get_logger().info(f'Changing to {gripper_type.value} at {table_name.value}')
+
+        self.get_logger().info(
+            f'Changing to {gripper_type.value} at {table_name.value}')
         return
 
     def pick_up_tray(self, id, pose):
@@ -284,7 +285,7 @@ class OrderManager(Node):
             'place tray')
         return True
 
-    def pickup_part(self, color:int, type:int, pose:Pose):
+    def pickup_part(self, color: int, part_type: int, pose: Pose):
         '''
         Function for picking up a part
         input: color - the color of the part to be picked up
@@ -308,23 +309,23 @@ class OrderManager(Node):
         else:
             color_str = "ERROR"
 
-        if type == Part.BATTERY:
+        if part_type == Part.BATTERY:
             type_str = "BATTERY"
-        elif type == Part.PUMP:
+        elif part_type == Part.PUMP:
             type_str = "PUMP"
-        elif type == Part.SENSOR:
+        elif part_type == Part.SENSOR:
             type_str = "SENSOR"
-        elif type == Part.REGULATOR:
+        elif part_type == Part.REGULATOR:
             type_str = "REGULATOR"
         else:
-            type_str ="ERROR"
+            type_str = "ERROR"
 
-        self.get_logger().info(f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
+        self.get_logger().info(
+            f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
 
         return True
 
-    
-    def place_part(self, color:int, type:int, tray_id:int, quadrent:int):
+    def place_part(self, color: int, part_type: int, tray_id: int, quadrant: int):
         '''
         Function for placing a part
         input: color - the color of the part to be picked up
@@ -350,17 +351,18 @@ class OrderManager(Node):
         else:
             color_str = "ERROR"
 
-        if type == Part.BATTERY:
+        if part_type == Part.BATTERY:
             type_str = "BATTERY"
-        elif type == Part.PUMP:
+        elif part_type == Part.PUMP:
             type_str = "PUMP"
-        elif type == Part.SENSOR:
+        elif part_type == Part.SENSOR:
             type_str = "SENSOR"
-        elif type == Part.REGULATOR:
+        elif part_type == Part.REGULATOR:
             type_str = "REGULATOR"
         else:
-            type_str ="ERROR"
+            type_str = "ERROR"
 
-        self.get_logger().info(f"Placing {color_str} {type_str} in quadrant {quadrent} in tray {tray_id}")
+        self.get_logger().info(
+            f"Placing {color_str} {type_str} in quadrant {quadrant} in tray {tray_id}")
 
         return True
