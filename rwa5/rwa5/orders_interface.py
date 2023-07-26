@@ -243,14 +243,14 @@ class OrderManager(Node):
             part_found = False
             for item in self._left_bin_inventory:
                 if item.part == order_part.part:
-                    self.pick_up_part(
+                    self.pickup_part(
                         item.part.color, item.part.type, item.pose)
                     part_found = True
                     break
             if not part_found:
                 for item in self._right_bin_inventory:
                     if item.part == order_part.part:
-                        self.pick_up_part(
+                        self.pickup_part(
                             item.part.color, item.part.type, item.pose)
                         part_found = True
                         break
@@ -258,7 +258,7 @@ class OrderManager(Node):
                 self.get_logger().fatal(
                     f"Part not found. Can not complete order {order.order_id}")
                 return False
-            self.place_part(order_part.part.color, order_part.part.type,
+            self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
                             order_part.quadrant)
         self.complete_order()
 
@@ -284,7 +284,7 @@ class OrderManager(Node):
             pose (Pose): The pose of the tray to be picked up
         """
 
-        self.get_logger().info(f'Picking up tray' + str(id) + 'at' + str(pose))
+        self.get_logger().info(f'Picking up tray {str(id)} at [{pose.position.x} {pose.position.y} {pose.position.z}] [{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}')
 
 
     def place_tray(self, id, agv):
@@ -296,7 +296,7 @@ class OrderManager(Node):
             agv (int): The agv to place the tray on
         """
         
-        self.get_logger().info(f'Placing tray' + str(id) + 'on agv' + str(agv))
+        self.get_logger().info(f'Placing tray {id} on agv {agv}')
 
 
 
@@ -335,12 +335,13 @@ class OrderManager(Node):
         else:
             type_str ="ERROR"
 
-        self.get_logger().info(f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
+        self.get_logger().info(
+            f"Picking up {color_str} {type_str} located at [{pose.position.x} {pose.position.y} {pose.position.z}] [{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}")
 
         return True
 
     
-    def place_part(self, color:int, type:int, tray_id:int, quadrent:int):
+    def place_part(self, color:int, type:int, tray_id:int, quadrant:int):
         '''
         Function for placing a part
         input: color - the color of the part to be picked up
@@ -377,6 +378,6 @@ class OrderManager(Node):
         else:
             type_str ="ERROR"
 
-        self.get_logger().info(f"Placing {color_str} {type_str} in quadrant {quadrent} in tray {tray_id}")
+        self.get_logger().info(f"Placing {color_str} {type_str} in quadrant {quadrant} in tray {tray_id}")
 
         return True
