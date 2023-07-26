@@ -1,23 +1,38 @@
 #ifndef __LOCATE_PARTS_TRAYS_HPP
 #define __LOCATE_PARTS_TRAYS_HPP
 
+/**
+ * @file locate_parts_trays.hpp
+ * @author Shreejay Badshah (sbadshah@umd.edu)
+ * @brief Functions to locate and transform the poses of parts and trays in ARIAC competition based on camera data
+ * @version 1.0
+ * @date 2023-07-26
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include <rclcpp/rclcpp.hpp>
 #include <ariac_msgs/msg/order.hpp>
 #include <ariac_msgs/msg/advanced_logical_camera_image.hpp>
 #include <memory>
-#include <map>
-#include <vector>
 #include <geometry_msgs/msg/pose.hpp>
 
 #include "rwa5/ariac_constants.hpp"
 #include "rwa5/ariac_tf_util.hpp"
 
+/**
+ * @brief Class to locate and publish parts and tray poses
+ * 
+ * This class locates parts and trays based on AL camera feedback and publishes transformed pose for the order manager 
+ */
 class LocatePartsTraysNode : public rclcpp::Node {
 
 public:
     // default ctor
     LocatePartsTraysNode(std::string node_name) : Node(node_name)
     {
+        RCLCPP_INFO_STREAM(this->get_logger(), "Publishing parts and tray poses in the world frame.");
 
         // initializing the camera image data message for the left bin
         m_left_bin_camera = ariac_msgs::msg::AdvancedLogicalCameraImage();

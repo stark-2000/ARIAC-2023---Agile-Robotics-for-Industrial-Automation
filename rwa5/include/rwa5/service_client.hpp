@@ -12,6 +12,9 @@ class ServiceClientNode : public rclcpp::Node {
      // default ctor
      ServiceClientNode() : Node("service_client_node"){
 
+        // initializing bool to keep track of the competition
+        m_competition_state = false;
+
         // client 
         m_competition_start_client = this->create_client<std_srvs::srv::Trigger>("/ariac/start_competition");
 
@@ -36,7 +39,11 @@ class ServiceClientNode : public rclcpp::Node {
       * 
       */
      bool m_competition_state;
-
+     
+     /**
+      * @brief Shared pointer to create_client object
+      * 
+      */
      rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr m_competition_start_client;
 
 

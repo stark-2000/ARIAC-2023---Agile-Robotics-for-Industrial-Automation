@@ -13,7 +13,6 @@ void LocatePartsTraysNode::left_bin_camera_data_subscriber_callback(ariac_msgs::
     if (m_left_bin_camera_data_bool){
         for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
             
-            //RCLCPP_INFO_STREAM(this->get_logger(), "left_bin_camera_data_subscriber_callback");
             m_left_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
             m_left_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
             m_left_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::L_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
@@ -33,7 +32,6 @@ void LocatePartsTraysNode::right_bin_camera_data_subscriber_callback(ariac_msgs:
     if (m_right_bin_camera_data_bool){
         for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
             
-            //RCLCPP_INFO_STREAM(this->get_logger(), "right_bin_camera_data_subscriber_callback");
             m_right_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
             m_right_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
             m_right_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::R_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
@@ -54,7 +52,6 @@ void LocatePartsTraysNode::kitting_tray1_camera_data_subscriber_callback(ariac_m
     if (m_kitting_tray1_camera_data_bool){
         for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
             
-            //RCLCPP_INFO_STREAM(this->get_logger(), "kitting_tray1_camera_data_subscriber_callback");
             m_kitting_tray1_camera.tray_poses.at(i).id = msg->tray_poses.at(i).id;
             m_kitting_tray1_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS1_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
         }
@@ -73,7 +70,6 @@ void LocatePartsTraysNode::kitting_tray2_camera_data_subscriber_callback(ariac_m
     if (m_kitting_tray2_camera_data_bool){
         for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
             
-            //RCLCPP_INFO_STREAM(this->get_logger(), "kitting_tray2_camera_data_subscriber_callback");
             m_kitting_tray2_camera.tray_poses.at(i).id = msg->tray_poses.at(i).id;
             m_kitting_tray2_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS2_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
         }
