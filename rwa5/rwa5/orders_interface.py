@@ -43,12 +43,19 @@ class OrderManager(Node):
     Args:
         Node (Node): Class for creating an ROS node
     """
-    _competition_states = {
-        CompetitionState.IDLE: 0,
-        CompetitionState.READY: 1,
-        CompetitionState.STARTED: 2,
-        CompetitionState.ORDER_ANNOUNCEMENTS_DONE: 3,
-        CompetitionState.ENDED: 4,
+
+    _part_colors = {
+        Part.RED: 'red',
+        Part.BLUE: 'blue',
+        Part.GREEN: 'green',
+        Part.ORANGE: 'orange',
+        Part.PURPLE: 'purple',
+    }
+    _part_types = {
+        Part.BATTERY: 'battery',
+        Part.PUMP: 'pump',
+        Part.REGULATOR: 'regulator',
+        Part.SENSOR: 'sensor',
     }
 
     def __init__(self, node_name):
@@ -143,6 +150,8 @@ class OrderManager(Node):
         # If not currently working on an order, set new order to current
         if self._current_order is None:
             self._current_order = order
+            self.get_logger().info(
+                f'No orders in queue. Starting order {order.order_id}.')
         else:
             # If incoming order is priority, add it to priority queue.
             # If priority queue is empty and current order is not priority,
@@ -158,13 +167,12 @@ class OrderManager(Node):
                     self._priority_queue.append(order)
             else:
                 self._order_queue.append(order)
-        self.get_logger().info(
-            f'Order {order.order_id} added to queue.')
-        self.get_logger().info(
-            f'Number of orders in priority queue: {len(self._priority_queue)}')
-        self.get_logger().info(
-            f'Number of orders in regular queue: {len(self._order_queue)}')
-        # For this assignment, order is just set to be completed as soon as it is added
+            self.get_logger().info(
+                f'Order {order.order_id} added to queue.')
+            self.get_logger().info(
+                f'Number of orders in priority queue: {len(self._priority_queue)}')
+            self.get_logger().info(
+                f'Number of orders in regular queue: {len(self._order_queue)}')
 
     def next_order(self):
         """
@@ -270,22 +278,24 @@ class OrderManager(Node):
 
         @return None
         """
-        
-        self.get_logger().info(f'Changing to {gripper_type.value} at {table_name.value}')
-        return
 
+        self.get_logger().info(
+            f'Changing to {gripper_type.value} at {table_name.value}')
+        return
 
     def pick_up_tray(self, id, pose):
         """
         Function for picking up a tray
-        
+
         Parameters:
             id (int): The id of the tray to be picked up
             pose (Pose): The pose of the tray to be picked up
         """
 
-        self.get_logger().info(f'Picking up tray {str(id)} at [{pose.position.x} {pose.position.y} {pose.position.z}] [{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}')
-
+        self.get_logger().info(
+            f'Picking up tray {str(id)} at '\
+                f'[{pose.position.x} {pose.position.y} {pose.position.z}]' \
+                f'[{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}]')
 
     def place_tray(self, id, agv):
         """
@@ -295,12 +305,10 @@ class OrderManager(Node):
             id (int): The id of the tray to be placed
             agv (int): The agv to place the tray on
         """
-        
+
         self.get_logger().info(f'Placing tray {id} on agv {agv}')
 
-
-
-    def pickup_part(self, color:int, type:int, pose:Pose):
+    def pickup_part(self, color: int, part_type: int, pose: Pose):
         '''
         Function for picking up a part
         input: color - the color of the part to be picked up
@@ -311,37 +319,15 @@ class OrderManager(Node):
         Future work:
             This function will need to return a future callback that will provide the result of picking up the part
         '''
-        if color == Part.RED:
-            color_str = "RED"
-        elif color == Part.GREEN:
-            color_str = "GREEN"
-        elif color == Part.BLUE:
-            color_str = "BLUE"
-        elif color == Part.ORANGE:
-            color_str = "ORANGE"
-        elif color == Part.PURPLE:
-            color_str = "PURPLE"
-        else:
-            color_str = "ERROR"
-
-        if type == Part.BATTERY:
-            type_str = "BATTERY"
-        elif type == Part.PUMP:
-            type_str = "PUMP"
-        elif type == Part.SENSOR:
-            type_str = "SENSOR"
-        elif type == Part.REGULATOR:
-            type_str = "REGULATOR"
-        else:
-            type_str ="ERROR"
 
         self.get_logger().info(
-            f"Picking up {color_str} {type_str} located at [{pose.position.x} {pose.position.y} {pose.position.z}] [{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}")
+            f'Picking up {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} '\
+                f'located at [{pose.position.x} {pose.position.y} {pose.position.z}] ' \
+                f'[{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}]')
 
         return True
 
-    
-    def place_part(self, color:int, type:int, tray_id:int, quadrant:int):
+    def place_part(self, color: int, part_type: int, tray_id: int, quadrant: int):
         '''
         Function for placing a part
         input: color - the color of the part to be picked up
@@ -354,30 +340,8 @@ class OrderManager(Node):
         Future work:
             This function will need to return a future callback that will provide the result of picking up the part
         '''
-        if color == Part.RED:
-            color_str = "RED"
-        elif color == Part.GREEN:
-            color_str = "GREEN"
-        elif color == Part.BLUE:
-            color_str = "BLUE"
-        elif color == Part.ORANGE:
-            color_str = "ORANGE"
-        elif color == Part.PURPLE:
-            color_str = "PURPLE"
-        else:
-            color_str = "ERROR"
 
-        if type == Part.BATTERY:
-            type_str = "BATTERY"
-        elif type == Part.PUMP:
-            type_str = "PUMP"
-        elif type == Part.SENSOR:
-            type_str = "SENSOR"
-        elif type == Part.REGULATOR:
-            type_str = "REGULATOR"
-        else:
-            type_str ="ERROR"
-
-        self.get_logger().info(f"Placing {color_str} {type_str} in quadrant {quadrant} in tray {tray_id}")
+        self.get_logger().info(
+            f"Placing {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} in quadrant {quadrant} in tray {tray_id}")
 
         return True
