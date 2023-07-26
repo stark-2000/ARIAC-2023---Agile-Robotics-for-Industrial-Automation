@@ -18,6 +18,7 @@ public:
     // default ctor
     LocatePartsTraysNode(std::string node_name) : Node(node_name)
     {
+        RCLCPP_INFO_STREAM(this->get_logger(), "Publishing parts and tray poses in the world frame.");
 
         // initializing the camera image data message for the left bin
         m_left_bin_camera = ariac_msgs::msg::AdvancedLogicalCameraImage();
