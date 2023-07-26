@@ -1,9 +1,25 @@
 #ifndef __SERVICE_CLIENT_HPP__
 #define __SERVICE_CLIENT_HPP__
 
+/**
+ * @file service_client.hpp
+ * @author Shreejay Badshah (sbadshah@umd.edu)
+ * @brief Triggers service to start ARIAC competition
+ * @version 1.0
+ * @date 2023-07-13
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include <rclcpp/rclcpp.hpp>
 #include <ariac_msgs/msg/competition_state.hpp>
 #include <std_srvs/srv/trigger.hpp>
+
+/**
+ * @brief This class triggers service to start the ARIAC competition
+ * 
+ */
 
 class ServiceClientNode : public rclcpp::Node {
     
