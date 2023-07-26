@@ -1,3 +1,4 @@
+import time
 from collections import deque
 from enum import Enum
 from functools import partial
@@ -98,29 +99,21 @@ class OrderManager(Node):
             ALCImage, '/kitting_tray2_camera_data', self.kts2_callback, qos_profile_sensor_data)
 
     def left_bin_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for part_pose in camera_msg.part_poses:
             self._left_bin_inventory.append(part_pose)
         self._left_bin_data_received = True
 
     def right_bin_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for part_pose in camera_msg.part_poses:
             self._right_bin_inventory.append(part_pose)
         self._right_bin_data_received = True
 
     def kts1_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for tray_pose in camera_msg.tray_poses:
             self._kts1_inventory.append(tray_pose)
         self._kts1_data_received = True
 
     def kts2_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for tray_pose in camera_msg.tray_poses:
             self._kts2_inventory.append(tray_pose)
         self._kts2_data_received = True
@@ -130,14 +123,13 @@ class OrderManager(Node):
             self._started_orders = True
             self.get_logger().info(
                 'starting orders')
-            # while (True):
-            #     if (self._left_bin_data_received
-            #         and self._right_bin_data_received
-            #         and self._kts1_data_received
-            #             and self._kts2_data_received):
-            #         self.get_logger().info(
-            #             'fufilling orders')
-            #         self.fulfill_order()
+            while (True):
+                if (self._left_bin_data_received
+                    and self._right_bin_data_received
+                    and self._kts1_data_received
+                        and self._kts2_data_received):
+                    self.fulfill_order()
+                time.sleep(0.2)
 
     def order_callback(self, order_msg: OrderMsg):
         """
@@ -159,7 +151,6 @@ class OrderManager(Node):
                 if len(self._priority_queue == 0):
                     if not self._current_order.order_priority:
                         self._paused_order = self._current_order
-                        # self._order_queue.appendleft(self._current_order)
                         self._current_order = order
                     else:
                         self._priority_queue.append(order)
@@ -218,24 +209,20 @@ class OrderManager(Node):
     def fulfill_order(self):
         if self._current_order is None:
             return
-        self.get_logger().info(
-            f'{self._current_order.order_id}')
         order = self._current_order
+        self.get_logger().info(
+            f'Fulfilling: {order.order_id}')
         target_tray = self._current_order.tray_id
         target_agv = self._current_order.agv_number
         tray_pose = None
         station = None
         for tray in self._kts1_inventory:
-            self.get_logger().info(
-                f'{tray.id}')
             if tray.id == target_tray:
                 tray_pose = tray.pose
                 station = TrayStations.KTS_1
                 break
         if tray_pose == None:
             for tray in self._kts2_inventory:
-                self.get_logger().info(
-                    f'{tray.id}')
                 if tray.id == target_tray:
                     tray_pose = tray.pose
                     station = TrayStations.KTS_2
@@ -247,8 +234,8 @@ class OrderManager(Node):
 
         # Change gripper to tray
         self.change_gripper(station, GripperTypes.TRAY_GRIPPER)
-        self.pick_up_tray(target_tray.id, tray_pose)
-        self.place_tray(target_tray.id, target_agv)
+        self.pick_up_tray(target_tray, tray_pose)
+        self.place_tray(target_tray, target_agv)
 
         # Change gripper to part
         self.change_gripper(station, GripperTypes.PART_GRIPPER)
@@ -257,21 +244,21 @@ class OrderManager(Node):
             for item in self._left_bin_inventory:
                 if item.part == order_part.part:
                     self.pick_up_part(
-                        item.part.color, item.part.type, item.part.pose)
+                        item.part.color, item.part.type, item.pose)
                     part_found = True
                     break
             if not part_found:
                 for item in self._right_bin_inventory:
                     if item.part == order_part.part:
                         self.pick_up_part(
-                            item.part.color, item.part.type, item.part.pose)
+                            item.part.color, item.part.type, item.pose)
                         part_found = True
                         break
             if not part_found:
                 self.get_logger().fatal(
                     f"Part not found. Can not complete order {order.order_id}")
                 return False
-            self.place_part(order_part.color, order_part.type,
+            self.place_part(order_part.part.color, order_part.part.type,
                             order_part.quadrant)
         self.complete_order()
 
@@ -283,14 +270,19 @@ class OrderManager(Node):
 
         @return None
         """
-
-        self.get_logger().info("Changing to " + gripper_type + " at " + table_name)
+        
+        self.get_logger().info(f'Changing to {gripper_type.value} at {table_name.value}')
+        return
 
     def pick_up_tray(self, id, pose):
-        return
+        self.get_logger().info(
+            'pick tray')
+        return True
 
     def place_tray(self, id, agv):
-        return
+        self.get_logger().info(
+            'place tray')
+        return True
 
     def pickup_part(self, color:int, type:int, pose:Pose):
         '''
