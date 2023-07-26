@@ -25,19 +25,10 @@ void LocatePartsTraysNode::left_bin_camera_data_subscriber_callback(ariac_msgs::
     for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
 
         m_left_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
-        m_left_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
-        m_left_bin_camera.part_poses.at(i).pose.position.x = msg->part_poses.at(i).pose.position.x;
-        m_left_bin_camera.part_poses.at(i).pose.position.y = msg->part_poses.at(i).pose.position.y;
-        m_left_bin_camera.part_poses.at(i).pose.position.z = msg->part_poses.at(i).pose.position.z;
-        m_left_bin_camera.part_poses.at(i).pose.orientation.w = msg->part_poses.at(i).pose.orientation.w;
-        m_left_bin_camera.part_poses.at(i).pose.orientation.x = msg->part_poses.at(i).pose.orientation.x;
-        m_left_bin_camera.part_poses.at(i).pose.orientation.y = msg->part_poses.at(i).pose.orientation.y;
-        m_left_bin_camera.part_poses.at(i).pose.orientation.z = msg->part_poses.at(i).pose.orientation.z;    
+        m_left_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;  
 
-  
-          
         m_left_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::L_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
-    
+
     }  
 }
 
@@ -50,16 +41,8 @@ void LocatePartsTraysNode::right_bin_camera_data_subscriber_callback(ariac_msgs:
     for (long unsigned int i{0}; i < msg->part_poses.size(); i++){
         m_right_bin_camera.part_poses.at(i).part.color = msg->part_poses.at(i).part.color;
         m_right_bin_camera.part_poses.at(i).part.type = msg->part_poses.at(i).part.type;
-        m_right_bin_camera.part_poses.at(i).pose.position.x = msg->part_poses.at(i).pose.position.x;
-        m_right_bin_camera.part_poses.at(i).pose.position.y = msg->part_poses.at(i).pose.position.y;
-        m_right_bin_camera.part_poses.at(i).pose.position.z = msg->part_poses.at(i).pose.position.z;
-        m_right_bin_camera.part_poses.at(i).pose.orientation.w = msg->part_poses.at(i).pose.orientation.w;
-        m_right_bin_camera.part_poses.at(i).pose.orientation.x = msg->part_poses.at(i).pose.orientation.x;
-        m_right_bin_camera.part_poses.at(i).pose.orientation.y = msg->part_poses.at(i).pose.orientation.y;
-        m_right_bin_camera.part_poses.at(i).pose.orientation.z = msg->part_poses.at(i).pose.orientation.z;
         
-       m_right_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::R_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
-
+        m_right_bin_camera.part_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::R_BIN_CAMERA_FRAME, msg->part_poses.at(i).pose);
     }  
 }
 
@@ -71,16 +54,10 @@ void LocatePartsTraysNode::kitting_tray1_camera_data_subscriber_callback(ariac_m
     
     for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
 
-        m_kitting_tray1_camera.tray_poses.at(i).pose.position.x = msg->tray_poses.at(i).pose.position.x;
-        m_kitting_tray1_camera.tray_poses.at(i).pose.position.y = msg->tray_poses.at(i).pose.position.y;
-        m_kitting_tray1_camera.tray_poses.at(i).pose.position.z = msg->tray_poses.at(i).pose.position.z;
-        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.w = msg->tray_poses.at(i).pose.orientation.w;
-        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.x = msg->tray_poses.at(i).pose.orientation.x;
-        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.y = msg->tray_poses.at(i).pose.orientation.y;
-        m_kitting_tray1_camera.tray_poses.at(i).pose.orientation.z = msg->tray_poses.at(i).pose.orientation.z;
+        m_kitting_tray1_camera.tray_poses.at(i).id = msg->tray_poses.at(i).id;
 
-       m_kitting_tray1_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS1_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
-        
+        m_kitting_tray1_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS1_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
+
     }  
 }
 
@@ -93,15 +70,9 @@ void LocatePartsTraysNode::kitting_tray2_camera_data_subscriber_callback(ariac_m
 
     for (long unsigned int i{0}; i < msg->tray_poses.size(); i++){
 
-        m_kitting_tray2_camera.tray_poses.at(i).pose.position.x = msg->tray_poses.at(i).pose.position.x;
-        m_kitting_tray2_camera.tray_poses.at(i).pose.position.y = msg->tray_poses.at(i).pose.position.y;
-        m_kitting_tray2_camera.tray_poses.at(i).pose.position.z = msg->tray_poses.at(i).pose.position.z;
-        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.w = msg->tray_poses.at(i).pose.orientation.w;
-        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.x = msg->tray_poses.at(i).pose.orientation.x;
-        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.y = msg->tray_poses.at(i).pose.orientation.y;
-        m_kitting_tray2_camera.tray_poses.at(i).pose.orientation.z = msg->tray_poses.at(i).pose.orientation.z;
+        m_kitting_tray2_camera.tray_poses.at(i).id = msg->tray_poses.at(i).id;
 
-       m_kitting_tray2_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS2_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
+        m_kitting_tray2_camera.tray_poses.at(i).pose = m_ariac_tf_util->get_object_pose_world(shared_from_this(), ARIAC_FRAME::KTS2_BIN_CAMERA_FRAME, msg->tray_poses.at(i).pose);
         
     }  
 }
