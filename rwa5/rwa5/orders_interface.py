@@ -4,9 +4,10 @@ from functools import partial
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import UInt8
-from ariac_msgs.msg import Order as OrderMsg, AdvancedLogicalCameraImage as ALCImage, CompetitionState
+from ariac_msgs.msg import Order as OrderMsg, AdvancedLogicalCameraImage as ALCImage, CompetitionState, Part
 from ariac_msgs.srv import ChangeGripper
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from geometry_msgs.msg import Pose
 
 
 class GripperTypes(Enum):
@@ -291,8 +292,83 @@ class OrderManager(Node):
     def place_tray(self, id, agv):
         return
 
-    def pick_up_part(self, color, type, pose):
-        return
+    def pickup_part(self, color:int, type:int, pose:Pose):
+        '''
+        Function for picking up a part
+        input: color - the color of the part to be picked up
+               type - the type of part to be picked up
 
-    def place_part(self, color, type, quadrant):
-        return
+        output: result (boolean) - True for successful part pickup. False for failure
+
+        Future work:
+            This function will need to return a future callback that will provide the result of picking up the part
+        '''
+        if color == Part.RED:
+            color_str = "RED"
+        elif color == Part.GREEN:
+            color_str = "GREEN"
+        elif color == Part.BLUE:
+            color_str = "BLUE"
+        elif color == Part.ORANGE:
+            color_str = "ORANGE"
+        elif color == Part.PURPLE:
+            color_str = "PURPLE"
+        else:
+            color_str = "ERROR"
+
+        if type == Part.BATTERY:
+            type_str = "BATTERY"
+        elif type == Part.PUMP:
+            type_str = "PUMP"
+        elif type == Part.SENSOR:
+            type_str = "SENSOR"
+        elif type == Part.REGULATOR:
+            type_str = "REGULATOR"
+        else:
+            type_str ="ERROR"
+
+        self.get_logger().info(f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
+
+        return True
+
+    
+    def place_part(self, color:int, type:int, tray_id:int, quadrent:int):
+        '''
+        Function for placing a part
+        input: color - the color of the part to be picked up
+               type - the type of part to be picked up
+               tray_id - the id of the tray to place the part in
+               quadrent - the quadrant in the tray to place the part in
+
+        output: result (boolean) - True for successful part pickup. False for failure
+
+        Future work:
+            This function will need to return a future callback that will provide the result of picking up the part
+        '''
+        if color == Part.RED:
+            color_str = "RED"
+        elif color == Part.GREEN:
+            color_str = "GREEN"
+        elif color == Part.BLUE:
+            color_str = "BLUE"
+        elif color == Part.ORANGE:
+            color_str = "ORANGE"
+        elif color == Part.PURPLE:
+            color_str = "PURPLE"
+        else:
+            color_str = "ERROR"
+
+        if type == Part.BATTERY:
+            type_str = "BATTERY"
+        elif type == Part.PUMP:
+            type_str = "PUMP"
+        elif type == Part.SENSOR:
+            type_str = "SENSOR"
+        elif type == Part.REGULATOR:
+            type_str = "REGULATOR"
+        else:
+            type_str ="ERROR"
+
+        self.get_logger().info(f"Placing {color_str} {type_str} in quadrant {quadrent} in tray {tray_id}")
+
+        return True
