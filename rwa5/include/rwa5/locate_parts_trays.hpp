@@ -22,8 +22,9 @@
 #include "rwa5/ariac_tf_util.hpp"
 
 /**
- * @brief This class locates parts and trays based on AL camera feedback and publishes transformed pose for the order manager 
+ * @brief Class to locate and publish parts and tray poses
  * 
+ * This class locates parts and trays based on AL camera feedback and publishes transformed pose for the order manager 
  */
 class LocatePartsTraysNode : public rclcpp::Node {
 
