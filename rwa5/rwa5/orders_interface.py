@@ -321,7 +321,7 @@ class OrderManager(Node):
             type_str = "ERROR"
 
         self.get_logger().info(
-            f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
+            f"Picking up {color_str} {type_str} located at [{pose.position.x} {pose.position.y} {pose.position.z}] [{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}")
 
         return True
 
