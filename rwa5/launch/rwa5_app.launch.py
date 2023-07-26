@@ -12,6 +12,11 @@ def generate_launch_description():
         executable="service_client_exe",
     )
 
+    locate_parts_trays_exe_node = Node(
+        package="rwa5",
+        executable="locate_parts_trays_exe",
+    )
+    
     order_manager_node = Node(
         package="rwa5",
         executable="order_manager.py",
@@ -32,7 +37,7 @@ def generate_launch_description():
         executable="end_comp_client_exe.py"
     )
 
-    #Launch the launch file from av_server package
+    # Set up an action to include another launach file, with launch arguments
     included_launch = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource(
                 pkg_dir + '/launch/ariac.launch.py'), launch_arguments={'competitor_pkg': 'rwa5', 'sensor_conﬁg': 'sensors2023', 
@@ -40,6 +45,7 @@ def generate_launch_description():
 
     ld.add_action(included_launch)
     ld.add_action(service_client_exe_node)
+    ld.add_action(locate_parts_trays_exe_node)
     ld.add_action(order_manager_node)
     ld.add_action(ship_order_exe_node)
     ld.add_action(submit_order_node)
