@@ -1,3 +1,4 @@
+import rclpy
 from rclpy.node import Node 
 from ariac_msgs.msg import AGVStatus
 from ariac_msgs.srv import SubmitOrder
@@ -36,7 +37,7 @@ class Submit_Orders(Node):
         
 
         #Create client for service "ariac/submit_order"
-        self.cli = self.create_client(SubmitOrder, 'SubmitOrder')
+        self.cli = self.create_client(SubmitOrder, '/ariac/submit_order')
         self.req = SubmitOrder.Request()
 
 
@@ -72,7 +73,7 @@ class Submit_Orders(Node):
         """
 
         self.req.order_id = order_id
-        self.future = self.cli.call_async(self.req)
+        future = self.cli.call_async(self.req)
 
     
 
@@ -128,7 +129,7 @@ class Submit_Orders(Node):
         shipped_and_submitted = Bool()
         
         #If all 3 AGVs have submitted the orders, publish the final status
-        if len(_executed_agvs) == 3:
+        if len(_executed_agvs) == len(self.order_id_array):
             shipped_and_submitted.data = True
             self.get_logger().info('All orders submitted')
             self.publisher_.publish(shipped_and_submitted)

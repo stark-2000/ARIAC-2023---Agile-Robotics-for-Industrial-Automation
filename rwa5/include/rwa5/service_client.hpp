@@ -1,9 +1,25 @@
 #ifndef __SERVICE_CLIENT_HPP__
 #define __SERVICE_CLIENT_HPP__
 
+/**
+ * @file service_client.hpp
+ * @author Shreejay Badshah (sbadshah@umd.edu)
+ * @brief Triggers service to start ARIAC competition
+ * @version 1.0
+ * @date 2023-07-13
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include <rclcpp/rclcpp.hpp>
 #include <ariac_msgs/msg/competition_state.hpp>
 #include <std_srvs/srv/trigger.hpp>
+
+/**
+ * @brief This class triggers service to start the ARIAC competition
+ * 
+ */
 
 class ServiceClientNode : public rclcpp::Node {
     
@@ -11,6 +27,9 @@ class ServiceClientNode : public rclcpp::Node {
      
      // default ctor
      ServiceClientNode() : Node("service_client_node"){
+
+        // initializing bool to keep track of the competition
+        m_competition_state = false;
 
         // client 
         m_competition_start_client = this->create_client<std_srvs::srv::Trigger>("/ariac/start_competition");
@@ -36,7 +55,11 @@ class ServiceClientNode : public rclcpp::Node {
       * 
       */
      bool m_competition_state;
-
+     
+     /**
+      * @brief Shared pointer to create_client object
+      * 
+      */
      rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr m_competition_start_client;
 
 

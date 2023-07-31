@@ -1,3 +1,4 @@
+import time
 from collections import deque
 from enum import Enum
 from functools import partial
@@ -42,12 +43,19 @@ class OrderManager(Node):
     Args:
         Node (Node): Class for creating an ROS node
     """
-    _competition_states = {
-        CompetitionState.IDLE: 0,
-        CompetitionState.READY: 1,
-        CompetitionState.STARTED: 2,
-        CompetitionState.ORDER_ANNOUNCEMENTS_DONE: 3,
-        CompetitionState.ENDED: 4,
+
+    _part_colors = {
+        Part.RED: 'red',
+        Part.BLUE: 'blue',
+        Part.GREEN: 'green',
+        Part.ORANGE: 'orange',
+        Part.PURPLE: 'purple',
+    }
+    _part_types = {
+        Part.BATTERY: 'battery',
+        Part.PUMP: 'pump',
+        Part.REGULATOR: 'regulator',
+        Part.SENSOR: 'sensor',
     }
 
     def __init__(self, node_name):
@@ -98,29 +106,21 @@ class OrderManager(Node):
             ALCImage, '/kitting_tray2_camera_data', self.kts2_callback, qos_profile_sensor_data)
 
     def left_bin_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for part_pose in camera_msg.part_poses:
             self._left_bin_inventory.append(part_pose)
         self._left_bin_data_received = True
 
     def right_bin_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for part_pose in camera_msg.part_poses:
             self._right_bin_inventory.append(part_pose)
         self._right_bin_data_received = True
 
     def kts1_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for tray_pose in camera_msg.tray_poses:
             self._kts1_inventory.append(tray_pose)
         self._kts1_data_received = True
 
     def kts2_callback(self, camera_msg: ALCImage):
-        self.get_logger().info(
-            f'{camera_msg}')
         for tray_pose in camera_msg.tray_poses:
             self._kts2_inventory.append(tray_pose)
         self._kts2_data_received = True
@@ -130,14 +130,13 @@ class OrderManager(Node):
             self._started_orders = True
             self.get_logger().info(
                 'starting orders')
-            # while (True):
-            #     if (self._left_bin_data_received
-            #         and self._right_bin_data_received
-            #         and self._kts1_data_received
-            #             and self._kts2_data_received):
-            #         self.get_logger().info(
-            #             'fufilling orders')
-            #         self.fulfill_order()
+            while (True):
+                if (self._left_bin_data_received
+                    and self._right_bin_data_received
+                    and self._kts1_data_received
+                        and self._kts2_data_received):
+                    self.fulfill_order()
+                time.sleep(0.2)
 
     def order_callback(self, order_msg: OrderMsg):
         """
@@ -151,6 +150,8 @@ class OrderManager(Node):
         # If not currently working on an order, set new order to current
         if self._current_order is None:
             self._current_order = order
+            self.get_logger().info(
+                f'No orders in queue. Starting order {order.order_id}.')
         else:
             # If incoming order is priority, add it to priority queue.
             # If priority queue is empty and current order is not priority,
@@ -159,7 +160,6 @@ class OrderManager(Node):
                 if len(self._priority_queue == 0):
                     if not self._current_order.order_priority:
                         self._paused_order = self._current_order
-                        # self._order_queue.appendleft(self._current_order)
                         self._current_order = order
                     else:
                         self._priority_queue.append(order)
@@ -167,13 +167,12 @@ class OrderManager(Node):
                     self._priority_queue.append(order)
             else:
                 self._order_queue.append(order)
-        self.get_logger().info(
-            f'Order {order.order_id} added to queue.')
-        self.get_logger().info(
-            f'Number of orders in priority queue: {len(self._priority_queue)}')
-        self.get_logger().info(
-            f'Number of orders in regular queue: {len(self._order_queue)}')
-        # For this assignment, order is just set to be completed as soon as it is added
+            self.get_logger().info(
+                f'Order {order.order_id} added to queue.')
+            self.get_logger().info(
+                f'Number of orders in priority queue: {len(self._priority_queue)}')
+            self.get_logger().info(
+                f'Number of orders in regular queue: {len(self._order_queue)}')
 
     def next_order(self):
         """
@@ -218,24 +217,20 @@ class OrderManager(Node):
     def fulfill_order(self):
         if self._current_order is None:
             return
-        self.get_logger().info(
-            f'{self._current_order.order_id}')
         order = self._current_order
+        self.get_logger().info(
+            f'Fulfilling: {order.order_id}')
         target_tray = self._current_order.tray_id
         target_agv = self._current_order.agv_number
         tray_pose = None
         station = None
         for tray in self._kts1_inventory:
-            self.get_logger().info(
-                f'{tray.id}')
             if tray.id == target_tray:
                 tray_pose = tray.pose
                 station = TrayStations.KTS_1
                 break
         if tray_pose == None:
             for tray in self._kts2_inventory:
-                self.get_logger().info(
-                    f'{tray.id}')
                 if tray.id == target_tray:
                     tray_pose = tray.pose
                     station = TrayStations.KTS_2
@@ -247,8 +242,8 @@ class OrderManager(Node):
 
         # Change gripper to tray
         self.change_gripper(station, GripperTypes.TRAY_GRIPPER)
-        self.pick_up_tray(target_tray.id, tray_pose)
-        self.place_tray(target_tray.id, target_agv)
+        self.pick_up_tray(target_tray, tray_pose)
+        self.place_tray(target_tray, target_agv)
 
         # Change gripper to part
         self.change_gripper(station, GripperTypes.PART_GRIPPER)
@@ -256,22 +251,22 @@ class OrderManager(Node):
             part_found = False
             for item in self._left_bin_inventory:
                 if item.part == order_part.part:
-                    self.pick_up_part(
-                        item.part.color, item.part.type, item.part.pose)
+                    self.pickup_part(
+                        item.part.color, item.part.type, item.pose)
                     part_found = True
                     break
             if not part_found:
                 for item in self._right_bin_inventory:
                     if item.part == order_part.part:
-                        self.pick_up_part(
-                            item.part.color, item.part.type, item.part.pose)
+                        self.pickup_part(
+                            item.part.color, item.part.type, item.pose)
                         part_found = True
                         break
             if not part_found:
                 self.get_logger().fatal(
                     f"Part not found. Can not complete order {order.order_id}")
                 return False
-            self.place_part(order_part.color, order_part.type,
+            self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
                             order_part.quadrant)
         self.complete_order()
 
@@ -284,15 +279,36 @@ class OrderManager(Node):
         @return None
         """
 
-        self.get_logger().info("Changing to " + gripper_type + " at " + table_name)
+        self.get_logger().info(
+            f'Changing to {gripper_type.value} at {table_name.value}')
+        return
 
     def pick_up_tray(self, id, pose):
-        return
+        """
+        Function for picking up a tray
+
+        Parameters:
+            id (int): The id of the tray to be picked up
+            pose (Pose): The pose of the tray to be picked up
+        """
+
+        self.get_logger().info(
+            f'Picking up tray {str(id)} at '\
+                f'[{pose.position.x} {pose.position.y} {pose.position.z}]' \
+                f'[{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}]')
 
     def place_tray(self, id, agv):
-        return
+        """
+        Function for placing a tray
 
-    def pickup_part(self, color:int, type:int, pose:Pose):
+        Parameters:
+            id (int): The id of the tray to be placed
+            agv (int): The agv to place the tray on
+        """
+
+        self.get_logger().info(f'Placing tray {id} on agv {agv}')
+
+    def pickup_part(self, color: int, part_type: int, pose: Pose):
         '''
         Function for picking up a part
         input: color - the color of the part to be picked up
@@ -303,36 +319,15 @@ class OrderManager(Node):
         Future work:
             This function will need to return a future callback that will provide the result of picking up the part
         '''
-        if color == Part.RED:
-            color_str = "RED"
-        elif color == Part.GREEN:
-            color_str = "GREEN"
-        elif color == Part.BLUE:
-            color_str = "BLUE"
-        elif color == Part.ORANGE:
-            color_str = "ORANGE"
-        elif color == Part.PURPLE:
-            color_str = "PURPLE"
-        else:
-            color_str = "ERROR"
 
-        if type == Part.BATTERY:
-            type_str = "BATTERY"
-        elif type == Part.PUMP:
-            type_str = "PUMP"
-        elif type == Part.SENSOR:
-            type_str = "SENSOR"
-        elif type == Part.REGULATOR:
-            type_str = "REGULATOR"
-        else:
-            type_str ="ERROR"
-
-        self.get_logger().info(f"Picking up {color_str} {type_str} at location {pose.position} {pose.orientation}")
+        self.get_logger().info(
+            f'Picking up {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} '\
+                f'located at [{pose.position.x} {pose.position.y} {pose.position.z}] ' \
+                f'[{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}]')
 
         return True
 
-    
-    def place_part(self, color:int, type:int, tray_id:int, quadrent:int):
+    def place_part(self, color: int, part_type: int, tray_id: int, quadrant: int):
         '''
         Function for placing a part
         input: color - the color of the part to be picked up
@@ -345,30 +340,8 @@ class OrderManager(Node):
         Future work:
             This function will need to return a future callback that will provide the result of picking up the part
         '''
-        if color == Part.RED:
-            color_str = "RED"
-        elif color == Part.GREEN:
-            color_str = "GREEN"
-        elif color == Part.BLUE:
-            color_str = "BLUE"
-        elif color == Part.ORANGE:
-            color_str = "ORANGE"
-        elif color == Part.PURPLE:
-            color_str = "PURPLE"
-        else:
-            color_str = "ERROR"
 
-        if type == Part.BATTERY:
-            type_str = "BATTERY"
-        elif type == Part.PUMP:
-            type_str = "PUMP"
-        elif type == Part.SENSOR:
-            type_str = "SENSOR"
-        elif type == Part.REGULATOR:
-            type_str = "REGULATOR"
-        else:
-            type_str ="ERROR"
-
-        self.get_logger().info(f"Placing {color_str} {type_str} in quadrant {quadrent} in tray {tray_id}")
+        self.get_logger().info(
+            f"Placing {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} in quadrant {quadrant} in tray {tray_id}")
 
         return True
