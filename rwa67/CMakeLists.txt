@@ -36,6 +36,10 @@ set(LOCATE_PARTS_TRAYS_DEPENDS
   tf2_geometry_msgs
   orocos_kdl
   ariac_msgs
+  moveit_msgs
+  geometric_shapes
+  moveit_ros_planning_interface
+  robot_commander_msgs
 )
 
 
@@ -44,6 +48,12 @@ foreach(dependency IN ITEMS ${LOCATE_PARTS_TRAYS_DEPENDS})
   find_package(${dependency} REQUIRED)
 endforeach()
 
+add_executable(robot_commander_exe src/floor_robot.cpp src/main.cpp)
+ament_target_dependencies(robot_commander_exe ${LOCATE_PARTS_TRAYS_DEPENDS})
+
+install(TARGETS robot_commander_exe
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
 
 # Part and Tray
 add_executable(locate_parts_trays_exe src/locate_parts_trays.cpp src/ariac_tf_util.cpp)
@@ -55,6 +65,7 @@ install(TARGETS
   service_client_exe 
   ship_order_exe
   locate_parts_trays_exe
+  robot_commander_exe
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -63,6 +74,7 @@ install(DIRECTORY
   include  
   launch
   config
+  meshes
   DESTINATION share/${PROJECT_NAME})
 
 # Install Python modules

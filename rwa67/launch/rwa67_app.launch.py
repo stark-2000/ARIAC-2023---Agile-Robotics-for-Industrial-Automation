@@ -2,6 +2,11 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import launch.actions
+from launch.actions import IncludeLaunchDescription
+from launch_ros.substitutions import FindPackageShare
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+
+from ariac_moveit_config.parameters import generate_parameters
 
 def generate_launch_description():
     ld = LaunchDescription()
@@ -36,6 +41,18 @@ def generate_launch_description():
         package="rwa67",
         executable="end_comp_client_exe.py"
     )
+    robot_commander_exe_node = Node(
+        package="rwa67",
+        executable="robot_commander_exe",
+        output="screen",
+        parameters=generate_parameters()
+    )
+
+    moveit = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [FindPackageShare("ariac_moveit_config"), "/launch", "/ariac_robots_moveit.launch.py"]
+        )
+    )
 
     # Set up an action to include another launach file, with launch arguments
     included_launch = launch.actions.IncludeLaunchDescription(
@@ -50,5 +67,7 @@ def generate_launch_description():
     ld.add_action(ship_order_exe_node)
     ld.add_action(submit_order_node)
     ld.add_action(end_competition_node)
+    ld.add_action(robot_commander_exe_node)
+    ld.add_action(moveit)
     
     return ld
