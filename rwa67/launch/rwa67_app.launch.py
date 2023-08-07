@@ -2,7 +2,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import launch.actions
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch_ros.substitutions import FindPackageShare
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
@@ -53,7 +53,7 @@ def generate_launch_description():
             [FindPackageShare("ariac_moveit_config"), "/launch", "/ariac_robots_moveit.launch.py"]
         )
     )
-
+    
     # Set up an action to include another launach file, with launch arguments
     included_launch = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource(
@@ -69,5 +69,6 @@ def generate_launch_description():
     ld.add_action(end_competition_node)
     ld.add_action(robot_commander_exe_node)
     ld.add_action(moveit)
+
     
     return ld
