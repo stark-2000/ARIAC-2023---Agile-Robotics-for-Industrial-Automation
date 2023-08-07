@@ -1,4 +1,6 @@
 import time
+import rclpy
+from rclpy.parameter import Parameter
 from collections import deque
 from enum import Enum
 from functools import partial
@@ -9,7 +11,16 @@ from ariac_msgs.msg import Order as OrderMsg, AdvancedLogicalCameraImage as ALCI
 from ariac_msgs.srv import ChangeGripper
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from geometry_msgs.msg import Pose
+from std_srvs.srv import Trigger
 
+# Import custom ROS services
+from robot_commander_msgs.srv import (
+    EnterToolChanger,
+    ExitToolChanger,
+    MoveRobotToTable,
+    MoveRobotToTray,
+    MoveTrayToAGV
+)
 
 class GripperTypes(Enum):
     TRAY_GRIPPER = 'tray gripper'
@@ -17,8 +28,8 @@ class GripperTypes(Enum):
 
 
 class TrayStations(Enum):
-    KTS_1 = 'table 1'
-    KTS_2 = 'table 2'
+    KTS_1 = 1
+    KTS_2 = 2
 
 
 class Order:
@@ -60,6 +71,13 @@ class OrderManager(Node):
 
     def __init__(self, node_name):
         super().__init__(node_name)
+        sim_time = Parameter(
+            "use_sim_time",
+            rclpy.Parameter.Type.BOOL,
+            True
+        )
+
+        self.set_parameters([sim_time])
         # Queue to hold regular orders
         self._order_queue = deque()
         # Queue to hold priority orders
@@ -79,6 +97,38 @@ class OrderManager(Node):
         self._kts1_data_received = False
         self._kts2_data_received = False
         self._started_orders = False
+
+        # Callback groups to allow multiple callbacks to be called at the same time
+        timer_cb_group = MutuallyExclusiveCallbackGroup()
+        subscriber_cb_group = MutuallyExclusiveCallbackGroup()
+
+        # Multiple flags to trigger the robot actions
+
+        # The following flags prevent the same action to be called multiple times
+        self._robot_moving_to_home = False
+        self._moving_robot_to_table = False
+        self._entering_tool_changer = False
+        self._changing_gripper = False
+        self._exiting_tool_changer = False
+        self._activating_gripper = False
+        self._deactivating_gripper = False
+        self._moving_robot_to_tray = False
+        self._moving_tray_to_agv = False
+        self._ending_demo = False
+
+        # The following flags are used to trigger the next action
+        self._kit_completed = False
+        self._competition_started = False
+        self._competition_state = None
+        self._robot_moved_to_home = False
+        self._moved_robot_to_table = False
+        self._entered_tool_changer = False
+        self._changed_gripper = False
+        self._exited_tool_changer = False
+        self._activated_gripper = False
+        self._deactivated_gripper = False
+        self._moved_robot_to_tray = False
+        self._moved_tray_to_agv = False
 
         # Subscriber to listen for orders
         self._order_subscriber = self.create_subscription(
@@ -104,6 +154,15 @@ class OrderManager(Node):
 
         self._kts2_tray_data_subscriber = self.create_subscription(
             ALCImage, '/kitting_tray2_camera_data', self.kts2_callback, qos_profile_sensor_data)
+
+        
+        self._move_robot_to_tray_cli = self.create_client(
+            MoveRobotToTray, '/commander/move_robot_to_tray')
+        
+        # client to move a robot to a table
+        self._move_robot_to_table_cli = self.create_client(
+            MoveRobotToTable,
+            '/commander/move_robot_to_table')
 
     def left_bin_callback(self, camera_msg: ALCImage):
         for part_pose in camera_msg.part_poses:
@@ -241,34 +300,38 @@ class OrderManager(Node):
             return False
 
         # Change gripper to tray
-        self.change_gripper(station, GripperTypes.TRAY_GRIPPER)
+        #self.change_gripper(station, GripperTypes.TRAY_GRIPPER)
+        self._move_robot_to_table(station.value)
+        self._move_robot_to_tray(target_tray, tray_pose)
         self.pick_up_tray(target_tray, tray_pose)
-        self.place_tray(target_tray, target_agv)
+        while(True):
+            continue
+        # self.place_tray(target_tray, target_agv)
 
-        # Change gripper to part
-        self.change_gripper(station, GripperTypes.PART_GRIPPER)
-        for order_part in order.parts:
-            part_found = False
-            for item in self._left_bin_inventory:
-                if item.part == order_part.part:
-                    self.pickup_part(
-                        item.part.color, item.part.type, item.pose)
-                    part_found = True
-                    break
-            if not part_found:
-                for item in self._right_bin_inventory:
-                    if item.part == order_part.part:
-                        self.pickup_part(
-                            item.part.color, item.part.type, item.pose)
-                        part_found = True
-                        break
-            if not part_found:
-                self.get_logger().fatal(
-                    f"Part not found. Can not complete order {order.order_id}")
-                return False
-            self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
-                            order_part.quadrant)
-        self.complete_order()
+        # # Change gripper to part
+        # self.change_gripper(station, GripperTypes.PART_GRIPPER)
+        # for order_part in order.parts:
+        #     part_found = False
+        #     for item in self._left_bin_inventory:
+        #         if item.part == order_part.part:
+        #             self.pickup_part(
+        #                 item.part.color, item.part.type, item.pose)
+        #             part_found = True
+        #             break
+        #     if not part_found:
+        #         for item in self._right_bin_inventory:
+        #             if item.part == order_part.part:
+        #                 self.pickup_part(
+        #                     item.part.color, item.part.type, item.pose)
+        #                 part_found = True
+        #                 break
+        #     if not part_found:
+        #         self.get_logger().fatal(
+        #             f"Part not found. Can not complete order {order.order_id}")
+        #         return False
+        #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
+        #                     order_part.quadrant)
+        # self.complete_order()
 
     def change_gripper(self, table_name, gripper_type):
         """! callback to a service - ChangeGripper - format: "call_servicename_server"
@@ -345,3 +408,64 @@ class OrderManager(Node):
             f"Placing {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} in quadrant {quadrant} in tray {tray_id}")
 
         return True
+
+    def _move_robot_to_tray(self, tray_id, tray_pose):
+        '''
+        Move the floor robot to a tray to pick it up
+        '''
+        self.get_logger().info('👉 Moving robot to tray...')
+        self._moving_robot_to_tray = True
+        while not self._move_robot_to_tray_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error('Service not available, waiting...')
+
+        request = MoveRobotToTray.Request()
+        request.tray_id = tray_id
+        request.tray_pose_in_world = tray_pose
+        future = self._move_robot_to_tray_cli.call_async(request)
+        future.add_done_callback(self._move_robot_to_tray_done_cb)
+
+    def _move_robot_to_tray_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_robot_to_tray
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_robot_to_tray = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _move_robot_to_table(self, table_id):
+        '''
+        Move the floor robot to a table
+
+        Args:
+            table_id (int): 1 for kts1 and 2 for kts2
+        '''
+
+        self.get_logger().info('👉 Moving robot to changing station...')
+        self._moving_robot_to_table = True
+        while not self._move_robot_to_table_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = MoveRobotToTable.Request()
+        request.kts = table_id
+        future = self._move_robot_to_table_cli.call_async(request)
+        future.add_done_callback(self._move_robot_to_table_done_cb)
+
+    def _move_robot_to_table_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_robot_to_table
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_robot_to_table = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')

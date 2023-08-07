@@ -52,7 +52,7 @@ add_executable(robot_commander_exe src/floor_robot.cpp src/main.cpp)
 ament_target_dependencies(robot_commander_exe ${LOCATE_PARTS_TRAYS_DEPENDS})
 
 install(TARGETS robot_commander_exe
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 # Part and Tray
@@ -65,7 +65,6 @@ install(TARGETS
   service_client_exe 
   ship_order_exe
   locate_parts_trays_exe
-  robot_commander_exe
   DESTINATION lib/${PROJECT_NAME}
 )
 

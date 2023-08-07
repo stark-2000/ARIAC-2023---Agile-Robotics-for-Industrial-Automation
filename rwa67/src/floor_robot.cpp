@@ -34,63 +34,6 @@ FloorRobot::FloorRobot()
     options.callback_group = subscription_cbg_;
     gripper_options.callback_group = gripper_cbg_;
 
-        // subscriber callback to /rwa67/floor_robot/go_home topic
-        rwa67_sub_ = this->create_subscription<std_msgs::msg::String>(
-            "/rwa67/floor_robot/go_home", 10,
-            std::bind(&FloorRobot::floor_robot_sub_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/orders
-    orders_sub_ = this->create_subscription<ariac_msgs::msg::Order>("/ariac/orders", 1,
-                                                                    std::bind(&FloorRobot::orders_cb, this, std::placeholders::_1), options);
-    // subscription to /ariac/competition_state
-    competition_state_sub_ = this->create_subscription<ariac_msgs::msg::CompetitionState>(
-        "/ariac/competition_state", 1,
-        std::bind(&FloorRobot::competition_state_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/sensors/kts1_camera/image
-    kts1_camera_sub_ = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>(
-        "/ariac/sensors/kts1_camera/image", rclcpp::SensorDataQoS(),
-        std::bind(&FloorRobot::kts1_camera_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/sensors/kts2_camera/image
-    kts2_camera_sub_ = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>(
-        "/ariac/sensors/kts2_camera/image", rclcpp::SensorDataQoS(),
-        std::bind(&FloorRobot::kts2_camera_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/sensors/left_bins_camera/image
-    left_bins_camera_sub_ = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>(
-        "/ariac/sensors/left_bins_camera/image", rclcpp::SensorDataQoS(),
-        std::bind(&FloorRobot::left_bins_camera_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/sensors/right_bins_camera/image
-    right_bins_camera_sub_ = this->create_subscription<ariac_msgs::msg::AdvancedLogicalCameraImage>(
-        "/ariac/sensors/right_bins_camera/image", rclcpp::SensorDataQoS(),
-        std::bind(&FloorRobot::right_bins_camera_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/floor_robot_gripper/state
-    floor_gripper_state_sub_ = this->create_subscription<ariac_msgs::msg::VacuumGripperState>(
-        "/ariac/floor_robot_gripper_state", rclcpp::QoS(rclcpp::KeepLast(1)).best_effort().durability_volatile(),
-        std::bind(&FloorRobot::floor_gripper_state_cb, this, std::placeholders::_1), gripper_options);
-
-    // subscription to /ariac/agv1_status
-    agv1_status_sub_ = this->create_subscription<ariac_msgs::msg::AGVStatus>(
-        "/ariac/agv1_status", 10,
-        std::bind(&FloorRobot::agv1_status_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/agv2_status
-    agv2_status_sub_ = this->create_subscription<ariac_msgs::msg::AGVStatus>(
-        "/ariac/agv2_status", 10,
-        std::bind(&FloorRobot::agv2_status_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/agv3_status
-    agv3_status_sub_ = this->create_subscription<ariac_msgs::msg::AGVStatus>(
-        "/ariac/agv3_status", 10,
-        std::bind(&FloorRobot::agv3_status_cb, this, std::placeholders::_1), options);
-
-    // subscription to /ariac/agv4_status
-    agv4_status_sub_ = this->create_subscription<ariac_msgs::msg::AGVStatus>(
-        "/ariac/agv4_status", 10,
-        std::bind(&FloorRobot::agv4_status_cb, this, std::placeholders::_1), options);
 
     // client to /ariac/perform_quality_check
     quality_checker_ = this->create_client<ariac_msgs::srv::PerformQualityCheck>("/ariac/perform_quality_check");
