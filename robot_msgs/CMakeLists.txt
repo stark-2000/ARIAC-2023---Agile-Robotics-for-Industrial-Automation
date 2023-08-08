@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   ${srv_files}
 
   DEPENDENCIES
+  builtin_interfaces
   std_msgs
   geometry_msgs
 )
