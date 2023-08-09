@@ -4,8 +4,8 @@ This list outlines the necessary servers and clients that have been/need to be i
 ### Service Message Created
 - [x] EnterToolChanger.srv
 - [x] ExitToolChanger.srv
-- [x] MovePartToAGV.srv
-- [x] MoveRobotToPart.srv
+- [x] MovePartToAGV.srv - Shreejay
+- [x] MoveRobotToPart.srv - Shreejay
 - [x] MoveRobotToTable.srv
 - [x] MoveRobotToTray.srv
 - [x] MoveTrayToAGV.srv
@@ -15,22 +15,22 @@ This list outlines the necessary servers and clients that have been/need to be i
 ### Server added to floor_robot.hpp
 - [x] EnterToolChanger
 - [x] ExitToolChanger
-- [x] MovePartToAGV
-- [x] MoveRobotToPart
+- [x] MovePartToAGV - Shreejay
+- [x] MoveRobotToPart - Shreejay
 - [x] MoveRobotToTable
 - [x] MoveRobotToTray
-- [x] MoveTrayToAGV
+- [x] MoveTrayToAGV 
 - [ ] MoveRobotToBin
 - [ ] DiscardPart
 
 ### Server added to floor_robot.cpp
 - [x] EnterToolChanger
 - [x] ExitToolChanger
-- [ ] MovePartToAGV
-- [ ] MoveRobotToPart
+- [ ] MovePartToAGV - Shreejay
+- [ ] MoveRobotToPart - Shreejay
 - [x] MoveRobotToTable
 - [x] MoveRobotToTray
-- [x] MoveTrayToAGV
+- [x] MoveTrayToAGV 
 - [ ] MoveRobotToBin
 - [ ] DiscardPart
 
