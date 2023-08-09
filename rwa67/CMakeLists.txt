@@ -12,6 +12,7 @@ find_package(rclpy REQUIRED)
 find_package(ariac_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(robot_msgs REQUIRED)
 
 # directories
 include_directories(include)
@@ -39,7 +40,7 @@ set(LOCATE_PARTS_TRAYS_DEPENDS
   moveit_msgs
   geometric_shapes
   moveit_ros_planning_interface
-  robot_commander_msgs
+  robot_msgs
 )
 
 

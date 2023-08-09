@@ -27,7 +27,7 @@
   <depend>tf2_kdl</depend>
   <depend>geometry_msgs</depend>
   <depend>python3-pykdl</depend>
-  <depend>robot_commander_msgs</depend>
+  <depend>robot_msgs</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>orocos_kdl</depend>
   <depend>std_msgs</depend>
