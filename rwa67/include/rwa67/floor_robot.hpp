@@ -47,11 +47,13 @@
 #include <ariac_msgs/srv/vacuum_gripper_control.hpp>
 #include <ariac_msgs/srv/perform_quality_check.hpp>
 #include <ariac_msgs/srv/submit_order.hpp>
-#include <robot_commander_msgs/srv/enter_tool_changer.hpp>
-#include <robot_commander_msgs/srv/exit_tool_changer.hpp>
-#include <robot_commander_msgs/srv/move_robot_to_table.hpp>
-#include <robot_commander_msgs/srv/move_robot_to_tray.hpp>
-#include <robot_commander_msgs/srv/move_tray_to_agv.hpp>
+#include <robot_msgs/srv/enter_tool_changer.hpp>
+#include <robot_msgs/srv/exit_tool_changer.hpp>
+#include <robot_msgs/srv/move_robot_to_table.hpp>
+#include <robot_msgs/srv/move_robot_to_tray.hpp>
+#include <robot_msgs/srv/move_tray_to_agv.hpp>
+#include <robot_msgs/srv/move_robot_to_part.hpp>
+#include <robot_msgs/srv/move_part_to_agv.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <ariac_msgs/srv/move_agv.hpp>
 #include <std_msgs/msg/bool.hpp>
@@ -168,15 +170,21 @@ private:
     //! Service to move the robot to its home pose
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr move_robot_home_srv_;
     //! Service to move the robot to a table
-    rclcpp::Service<robot_commander_msgs::srv::MoveRobotToTable>::SharedPtr move_robot_to_table_srv_;
+    rclcpp::Service<robot_msgs::srv::MoveRobotToTable>::SharedPtr move_robot_to_table_srv_;
     //! Service to move the robot very close to a tray (just before it is grasped)
-    rclcpp::Service<robot_commander_msgs::srv::MoveRobotToTray>::SharedPtr move_robot_to_tray_srv_;
+    rclcpp::Service<robot_msgs::srv::MoveRobotToTray>::SharedPtr move_robot_to_tray_srv_;
     //! Service to move the robot to an AGV after picking a tray
-    rclcpp::Service<robot_commander_msgs::srv::MoveTrayToAGV>::SharedPtr move_tray_to_agv_srv_;
+    rclcpp::Service<robot_msgs::srv::MoveTrayToAGV>::SharedPtr move_tray_to_agv_srv_;
     //! Service to move the end effector inside a tool changer
-    rclcpp::Service<robot_commander_msgs::srv::EnterToolChanger>::SharedPtr enter_tool_changer_srv_;
+    rclcpp::Service<robot_msgs::srv::EnterToolChanger>::SharedPtr enter_tool_changer_srv_;
     //! Service to move the end effector outside a tool changer
-    rclcpp::Service<robot_commander_msgs::srv::ExitToolChanger>::SharedPtr exit_tool_changer_srv_;
+    rclcpp::Service<robot_msgs::srv::ExitToolChanger>::SharedPtr exit_tool_changer_srv_;
+
+    rclcpp::Service<robot_msgs::srv::MoveRobotToPart>::SharedPtr move_robot_to_part_srv_;
+
+    rclcpp::Service<robot_msgs::srv::MovePartToAGV>::SharedPtr move_part_to_agv_srv_;
+
+    int tray_counter_;
 
     /**
      * @brief Callback function for the service /commander/move_robot_home
@@ -190,51 +198,59 @@ private:
     /**
      * @brief Callback function for the service /commander/move_robot_to_table
      *
-     * @param req_ Shared pointer to robot_commander_msgs::srv::MoveToTable::Request
-     * @param res_ Shared pointer to robot_commander_msgs::srv::MoveToTable::Response
+     * @param req_ Shared pointer to robot_msgs::srv::MoveToTable::Request
+     * @param res_ Shared pointer to robot_msgs::srv::MoveToTable::Response
      */
     void
     move_robot_to_table_srv_cb_(
-        robot_commander_msgs::srv::MoveRobotToTable::Request::SharedPtr req_, robot_commander_msgs::srv::MoveRobotToTable::Response::SharedPtr res_);
+        robot_msgs::srv::MoveRobotToTable::Request::SharedPtr req_, robot_msgs::srv::MoveRobotToTable::Response::SharedPtr res_);
 
     /**
      * @brief Callback function for the service /commander/move_robot_to_tray
      *
-     * @param req_ Shared pointer to robot_commander_msgs::srv::MoveToTray::Request
-     * @param res_ Shared pointer to robot_commander_msgs::srv::MoveToTray::Response
+     * @param req_ Shared pointer to robot_msgs::srv::MoveToTray::Request
+     * @param res_ Shared pointer to robot_msgs::srv::MoveToTray::Response
      */
     void
     move_robot_to_tray_srv_cb_(
-        robot_commander_msgs::srv::MoveRobotToTray::Request::SharedPtr req_, robot_commander_msgs::srv::MoveRobotToTray::Response::SharedPtr res_);
+        robot_msgs::srv::MoveRobotToTray::Request::SharedPtr req_, robot_msgs::srv::MoveRobotToTray::Response::SharedPtr res_);
     /**
      * @brief Callback function for the service /competitor/floor_robot/move_tray_to_agv
      *
-     * @param req_ Shared pointer to robot_commander_msgs::srv::MoveTrayToAGV::Request
-     * @param res_ Shared pointer to robot_commander_msgs::srv::MoveTrayToAGV::Response
+     * @param req_ Shared pointer to robot_msgs::srv::MoveTrayToAGV::Request
+     * @param res_ Shared pointer to robot_msgs::srv::MoveTrayToAGV::Response
      */
     void
     move_tray_to_agv_srv_cb_(
-        robot_commander_msgs::srv::MoveTrayToAGV::Request::SharedPtr req_, robot_commander_msgs::srv::MoveTrayToAGV::Response::SharedPtr res_);
+        robot_msgs::srv::MoveTrayToAGV::Request::SharedPtr req_, robot_msgs::srv::MoveTrayToAGV::Response::SharedPtr res_);
 
     /**
      * @brief  Callback function for the service /commander/enter_tool_changer
      *
-     * @param req_ Shared pointer to robot_commander_msgs::srv::InToolChanger::Request
-     * @param res_ Shared pointer to robot_commander_msgs::srv::InToolChanger::Response
+     * @param req_ Shared pointer to robot_msgs::srv::InToolChanger::Request
+     * @param res_ Shared pointer to robot_msgs::srv::InToolChanger::Response
      */
     void
     enter_tool_changer_srv_cb_(
-        robot_commander_msgs::srv::EnterToolChanger::Request::SharedPtr req_, robot_commander_msgs::srv::EnterToolChanger::Response::SharedPtr res_);
+        robot_msgs::srv::EnterToolChanger::Request::SharedPtr req_, robot_msgs::srv::EnterToolChanger::Response::SharedPtr res_);
 
     /**
      * @brief Callback function for the service /commander/exit_tool_changer
      *
-     * @param req_ Shared pointer to robot_commander_msgs::srv::OutToolChanger::Request
-     * @param res_ Shared pointer to robot_commander_msgs::srv::OutToolChanger::Response
+     * @param req_ Shared pointer to robot_msgs::srv::OutToolChanger::Request
+     * @param res_ Shared pointer to robot_msgs::srv::OutToolChanger::Response
      */
     void
     exit_tool_changer_srv_cb_(
-        robot_commander_msgs::srv::ExitToolChanger::Request::SharedPtr req_, robot_commander_msgs::srv::ExitToolChanger::Response::SharedPtr res_);
+        robot_msgs::srv::ExitToolChanger::Request::SharedPtr req_, robot_msgs::srv::ExitToolChanger::Response::SharedPtr res_);
+
+    void 
+    move_robot_to_part_srv_cb_(
+        robot_msgs::srv::MoveRobotToPart::Request::SharedPtr req_, robot_msgs::srv::MoveRobotToPart::Response::SharedPtr res_);
+
+    void
+    move_part_to_agv_srv_cb(
+        robot_msgs::srv::MovePartToAGV::Request::SharedPtr req_, robot_msgs::srv::MovePartToAGV::Response::SharedPtr res_);
 
     /**
      * @brief Provide motion to the floor robot to move its base to one of the two tables.
@@ -290,6 +306,10 @@ private:
      * @return false Motion failed
      */
     bool exit_tool_changer_(std::string changing_station, std::string gripper_type);
+
+    bool move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose);
+
+    bool move_part_to_agv_(int agv_number);
 
     //=========== END PYTHON - C++ ===========//
 

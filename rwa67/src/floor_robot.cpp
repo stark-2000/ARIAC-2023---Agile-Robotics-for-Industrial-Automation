@@ -49,36 +49,50 @@ FloorRobot::FloorRobot()
             &FloorRobot::move_robot_home_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
-    move_robot_to_table_srv_ = create_service<robot_commander_msgs::srv::MoveRobotToTable>(
+    move_robot_to_table_srv_ = create_service<robot_msgs::srv::MoveRobotToTable>(
         "/commander/move_robot_to_table",
         std::bind(
             &FloorRobot::move_robot_to_table_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
-    move_robot_to_tray_srv_ = create_service<robot_commander_msgs::srv::MoveRobotToTray>(
+    move_robot_to_tray_srv_ = create_service<robot_msgs::srv::MoveRobotToTray>(
         "/commander/move_robot_to_tray",
         std::bind(
             &FloorRobot::move_robot_to_tray_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
     // service to move the tray to the agv
-    move_tray_to_agv_srv_ = create_service<robot_commander_msgs::srv::MoveTrayToAGV>(
+    move_tray_to_agv_srv_ = create_service<robot_msgs::srv::MoveTrayToAGV>(
         "/commander/move_tray_to_agv",
         std::bind(
             &FloorRobot::move_tray_to_agv_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
-    enter_tool_changer_srv_ = create_service<robot_commander_msgs::srv::EnterToolChanger>(
+    enter_tool_changer_srv_ = create_service<robot_msgs::srv::EnterToolChanger>(
         "/commander/enter_tool_changer",
         std::bind(
             &FloorRobot::enter_tool_changer_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
-    exit_tool_changer_srv_ = create_service<robot_commander_msgs::srv::ExitToolChanger>(
+    exit_tool_changer_srv_ = create_service<robot_msgs::srv::ExitToolChanger>(
         "/commander/exit_tool_changer",
         std::bind(
             &FloorRobot::exit_tool_changer_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
+
+    move_robot_to_part_srv_ = create_service<robot_msgs::srv::MoveRobotToPart>(
+        "/commander/move_robot_to_part",
+        std::bind(
+            &FloorRobot::move_robot_to_part_srv_cb_, this,
+            std::placeholders::_1, std::placeholders::_2));
+    
+    move_part_to_agv_srv_ = create_service<robot_msgs::srv::MovePartToAGV>(
+        "/commander/move_part_to_agv",
+        std::bind(
+            &FloorRobot::move_part_to_agv_srv_cb, this,
+            std::placeholders::_1, std::placeholders::_2));
+
+    tray_counter_ = int{1}; 
 
     // add models to the planning scene
     add_models_to_planning_scene_();
@@ -127,8 +141,8 @@ bool FloorRobot::move_robot_home_()
 
 //=============================================//
 void FloorRobot::move_robot_to_table_srv_cb_(
-    robot_commander_msgs::srv::MoveRobotToTable::Request::SharedPtr req,
-    robot_commander_msgs::srv::MoveRobotToTable::Response::SharedPtr res)
+    robot_msgs::srv::MoveRobotToTable::Request::SharedPtr req,
+    robot_msgs::srv::MoveRobotToTable::Response::SharedPtr res)
 {
     RCLCPP_INFO(get_logger(), "Received request to move robot to table");
     auto kts = req->kts;
@@ -148,9 +162,9 @@ void FloorRobot::move_robot_to_table_srv_cb_(
 //=============================================//
 bool FloorRobot::move_robot_to_table_(int kts)
 {
-    if (kts == robot_commander_msgs::srv::MoveRobotToTable::Request::KTS1)
+    if (kts == robot_msgs::srv::MoveRobotToTable::Request::KTS1)
         floor_robot_->setJointValueTarget(floor_kts1_js_);
-    else if (kts == robot_commander_msgs::srv::MoveRobotToTable::Request::KTS2)
+    else if (kts == robot_msgs::srv::MoveRobotToTable::Request::KTS2)
         floor_robot_->setJointValueTarget(floor_kts2_js_);
     else
     {
@@ -164,8 +178,8 @@ bool FloorRobot::move_robot_to_table_(int kts)
 
 //=============================================//
 void FloorRobot::move_robot_to_tray_srv_cb_(
-    robot_commander_msgs::srv::MoveRobotToTray::Request::SharedPtr req,
-    robot_commander_msgs::srv::MoveRobotToTray::Response::SharedPtr res)
+    robot_msgs::srv::MoveRobotToTray::Request::SharedPtr req,
+    robot_msgs::srv::MoveRobotToTray::Response::SharedPtr res)
 {
     RCLCPP_INFO(get_logger(), "Received request to move robot to tray");
     auto tray_id = req->tray_id;
@@ -208,14 +222,14 @@ bool FloorRobot::move_robot_to_tray_(int tray_id, const geometry_msgs::msg::Pose
 
     wait_for_attach_completion_(5.0);
 
-    
     if (floor_gripper_state_.attached){
 
         // Add tray to planning scene
         // TODO: This will generate all sorts of problems if "kit_tray_3" already exists in the planning scene
         // It can happen that you need to build 2 kits and both use tray id 3.
         // You should find a way to name each tray differently
-        std::string tray_name = "kit_tray_" + std::to_string(tray_id);
+        std::string tray_name = "kit_tray_" + std::to_string(tray_id) + "_" + std::to_string(tray_counter_);
+        tray_counter_++;
         add_single_model_to_planning_scene_(tray_name, "kit_tray.stl", tray_pose);
 
         // Attach tray to robot in planning scene
@@ -239,8 +253,8 @@ bool FloorRobot::move_robot_to_tray_(int tray_id, const geometry_msgs::msg::Pose
 
 //=============================================//
 void FloorRobot::move_tray_to_agv_srv_cb_(
-    robot_commander_msgs::srv::MoveTrayToAGV::Request::SharedPtr req,
-    robot_commander_msgs::srv::MoveTrayToAGV::Response::SharedPtr res)
+    robot_msgs::srv::MoveTrayToAGV::Request::SharedPtr req,
+    robot_msgs::srv::MoveTrayToAGV::Response::SharedPtr res)
 {
     RCLCPP_INFO(get_logger(), "Received request to move tray to agv");
     auto agv_number = req->agv_number;
@@ -289,8 +303,8 @@ bool FloorRobot::move_tray_to_agv(int agv_number)
 
 //=============================================//
 void FloorRobot::enter_tool_changer_srv_cb_(
-    robot_commander_msgs::srv::EnterToolChanger::Request::SharedPtr req,
-    robot_commander_msgs::srv::EnterToolChanger::Response::SharedPtr res)
+    robot_msgs::srv::EnterToolChanger::Request::SharedPtr req,
+    robot_msgs::srv::EnterToolChanger::Response::SharedPtr res)
 {
     RCLCPP_INFO(get_logger(), "Received request to enter tool changer");
 
@@ -332,8 +346,8 @@ bool FloorRobot::enter_tool_changer_(std::string changing_station, std::string g
 
 //=============================================//
 void FloorRobot::exit_tool_changer_srv_cb_(
-    robot_commander_msgs::srv::ExitToolChanger::Request::SharedPtr req,
-    robot_commander_msgs::srv::ExitToolChanger::Response::SharedPtr res)
+    robot_msgs::srv::ExitToolChanger::Request::SharedPtr req,
+    robot_msgs::srv::ExitToolChanger::Response::SharedPtr res)
 {
     RCLCPP_INFO(get_logger(), "Received request to exit tool changer");
 
@@ -367,6 +381,136 @@ bool FloorRobot::exit_tool_changer_(std::string changing_station, std::string gr
         return false;
 
     return true;
+}
+
+//=============================================//
+void FloorRobot::move_robot_to_part_srv_cb_(
+    robot_msgs::srv::MoveRobotToPart::Request::SharedPtr req,
+    robot_msgs::srv::MoveRobotToPart::Response::SharedPtr res)
+    {
+        RCLCPP_INFO(get_logger(), "Received request to move robot to part");
+
+        auto part_color = req->color;
+        auto part_type = req->type;
+        auto part_pose = req->part_pose_in_world;
+
+        if (move_robot_to_part_(part_color, part_type, part_pose))
+        {
+            res->success = true;
+            res->message = "Robot moved to the part";
+        }
+        else
+        {
+            res->success = false;
+            res->message = "Unable to move robot to the part";
+        }
+
+    }
+
+bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose)
+{
+    bool found_part = false;
+    std::string bin_side;
+
+    // Check left bins
+    for (auto part : left_bins_parts_)
+    {
+        if (part.part.type == part_type && part.part.color == part_color)
+        {
+            part_pose = Utils::multiply_poses(left_bins_camera_pose_, part.pose);
+            found_part = true;
+            bin_side = "left_bins";
+            break;
+        }
+    }
+    // Check right bins
+    if (!found_part)
+    {
+        for (auto part : right_bins_parts_)
+        {
+            if (part.part.type == part_type && part.part.color == part_color)
+            {
+                part_pose = Utils::multiply_poses(right_bins_camera_pose_, part.pose);
+                found_part = true;
+                bin_side = "right_bins";
+                break;
+            }
+        }
+    }
+    if (!found_part)
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to locate the part");
+        return false;
+    }
+
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    floor_robot_->setJointValueTarget("linear_actuator_joint", rail_positions_[bin_side]);
+    floor_robot_->setJointValueTarget("floor_shoulder_pan_joint", 0);
+
+    if (!move_to_target_())
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move robot to the part");
+        return false;
+    }
+
+    double part_rotation = Utils::get_yaw_from_pose_(part_pose);
+
+    waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
+                                          part_pose.position.z + 0.5, set_robot_orientation_(part_rotation)));
+    waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
+                                          part_pose.position.z + part_heights_[part_type] + pick_offset_, set_robot_orientation_(part_rotation)));
+
+    if (!move_through_waypoints_(waypoints, 0.3, 0.3))
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move robot above the part");
+        return false;
+    }
+
+    set_gripper_state_(true);
+
+    wait_for_attach_completion_(5.0);
+
+    if (floor_gripper_state_.attached){
+
+        // Add part to planning scene
+        std::string part_name = part_colors_[part_color] + "_" + part_types_[part_type];
+        add_single_model_to_planning_scene_(part_name, part_types_[part_type] + ".stl", part_pose);
+
+        // Attach tray to robot in planning scene
+        floor_robot_->attachObject(part_name);
+
+        // Move up slightly
+        waypoints.clear();
+        waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
+                                              part_pose.position.z + 0.2, set_robot_orientation_(part_rotation)));
+
+        if (!move_through_waypoints_(waypoints, 0.3, 0.3))
+        {
+            RCLCPP_ERROR(get_logger(), "Unable to move up");
+            return false;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+// NEXT SECTION | WORK IN PROGRESS BY SHREEJAY
+//=============================================//
+void FloorRobot::move_part_to_agv_srv_cb(
+    robot_msgs::srv::MovePartToAGV::Request::SharedPtr req, 
+    robot_msgs::srv::MovePartToAGV::Response::SharedPtr res)
+    {
+        auto agv_number = req->agv_number;
+        if (agv_number != 5){
+            res->success = true;
+        }
+    }
+
+bool FloorRobot::move_part_to_agv_(int agv_number)
+{
+    agv_number = 5;
+    return agv_number+1;
 }
 
 //=============================================//
