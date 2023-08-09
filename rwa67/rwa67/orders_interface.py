@@ -14,7 +14,7 @@ from geometry_msgs.msg import Pose
 from std_srvs.srv import Trigger
 
 # Import custom ROS services
-from robot_commander_msgs.srv import (
+from robot_msgs.srv import (
     EnterToolChanger,
     ExitToolChanger,
     MoveRobotToTable,
