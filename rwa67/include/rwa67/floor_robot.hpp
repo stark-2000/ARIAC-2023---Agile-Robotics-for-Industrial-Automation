@@ -52,6 +52,7 @@
 #include <robot_msgs/srv/move_robot_to_table.hpp>
 #include <robot_msgs/srv/move_robot_to_tray.hpp>
 #include <robot_msgs/srv/move_tray_to_agv.hpp>
+#include <robot_msgs/srv/drop_tray.hpp>
 #include <robot_msgs/srv/move_robot_to_part.hpp>
 #include <robot_msgs/srv/move_part_to_agv.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -175,6 +176,9 @@ private:
     rclcpp::Service<robot_msgs::srv::MoveRobotToTray>::SharedPtr move_robot_to_tray_srv_;
     //! Service to move the robot to an AGV after picking a tray
     rclcpp::Service<robot_msgs::srv::MoveTrayToAGV>::SharedPtr move_tray_to_agv_srv_;
+
+    rclcpp::Service<robot_msgs::srv::DropTray>::SharedPtr drop_tray_srv_;
+
     //! Service to move the end effector inside a tool changer
     rclcpp::Service<robot_msgs::srv::EnterToolChanger>::SharedPtr enter_tool_changer_srv_;
     //! Service to move the end effector outside a tool changer
@@ -224,6 +228,10 @@ private:
     move_tray_to_agv_srv_cb_(
         robot_msgs::srv::MoveTrayToAGV::Request::SharedPtr req_, robot_msgs::srv::MoveTrayToAGV::Response::SharedPtr res_);
 
+    void
+    drop_tray_srv_cb_(
+        robot_msgs::srv::DropTray::Request::SharedPtr req_, robot_msgs::srv::DropTray::Response::SharedPtr res_);
+
     /**
      * @brief  Callback function for the service /commander/enter_tool_changer
      *
@@ -252,6 +260,7 @@ private:
     move_part_to_agv_srv_cb(
         robot_msgs::srv::MovePartToAGV::Request::SharedPtr req_, robot_msgs::srv::MovePartToAGV::Response::SharedPtr res_);
 
+
     /**
      * @brief Provide motion to the floor robot to move its base to one of the two tables.
      *
@@ -278,6 +287,8 @@ private:
      * @return false Motion failed
      */
     bool move_robot_to_tray_(int tray_id, const geometry_msgs::msg::Pose &tray_pose);
+
+    bool drop_tray_(int tray_id, int agv_number);
 
     /**
      * @brief  Move the robot to its home pose
@@ -309,7 +320,7 @@ private:
 
     bool move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose);
 
-    bool move_part_to_agv_(int agv_number);
+    bool move_part_to_agv_(int agv_number, int quadrant);
 
     //=========== END PYTHON - C++ ===========//
 

@@ -68,6 +68,11 @@ FloorRobot::FloorRobot()
             &FloorRobot::move_tray_to_agv_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
+    drop_tray_srv_ = create_service<robot_msgs::srv::DropTray>(
+        "/commander/drop_tray",
+        std::bind(&FloorRobot::drop_tray_srv_cb_, this,
+        std::placeholders::_1, std::placeholders::_2));
+
     enter_tool_changer_srv_ = create_service<robot_msgs::srv::EnterToolChanger>(
         "/commander/enter_tool_changer",
         std::bind(
@@ -200,9 +205,6 @@ void FloorRobot::move_robot_to_tray_srv_cb_(
 //=============================================//
 bool FloorRobot::move_robot_to_tray_(int tray_id, const geometry_msgs::msg::Pose &tray_pose)
 {
-
-    
-
     double tray_rotation = Utils::get_yaw_from_pose_(tray_pose);
 
     std::vector<geometry_msgs::msg::Pose> waypoints;
@@ -298,6 +300,66 @@ bool FloorRobot::move_tray_to_agv(int agv_number)
         RCLCPP_ERROR(get_logger(), "Unable to move tray to AGV");
         return false;
     }
+
+    // floor_robot_->detachObject(tray_name);
+
+    // // Move up slightly
+    // waypoints.clear();
+    // waypoints.push_back(Utils::build_pose(agv_tray_pose.position.x, agv_tray_pose.position.y,
+    //                                       agv_tray_pose.position.z + 0.2, set_robot_orientation_(agv_rotation)));
+
+    // if (!move_through_waypoints_(waypoints, 0.2, 0.2))
+    // {
+    //     RCLCPP_ERROR(get_logger(), "Unable to move up");
+    //     return false;
+    // }
+
+    return true;
+}
+
+//=============================================//
+void FloorRobot::drop_tray_srv_cb_(
+    robot_msgs::srv::DropTray::Request::SharedPtr req,
+    robot_msgs::srv::DropTray::Response::SharedPtr res)
+{
+    RCLCPP_INFO(get_logger(), "Received request to drop the tray");
+
+    auto tray_id = req->tray_id;
+    auto agv_number = req->agv_number;
+
+    if (drop_tray_(tray_id, agv_number))
+    {
+        res->success = true;
+        res->message = "Robot dropped the tray";
+    }
+    else
+    {
+        res->success = false;
+        res->message = "Unable to drop the tray";
+    }
+}
+
+bool FloorRobot::drop_tray_(int tray_id, int agv_number)
+{
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    std::string tray_name = "kit_tray_" + std::to_string(tray_id) + "_" + std::to_string(tray_counter_);
+
+    floor_robot_->detachObject(tray_name);
+
+    auto agv_tray_pose = get_pose_in_world_frame_("agv" + std::to_string(agv_number) + "_tray");
+    auto agv_rotation = Utils::get_yaw_from_pose_(agv_tray_pose);
+
+    // Move up slightly
+    waypoints.clear();
+    waypoints.push_back(Utils::build_pose(agv_tray_pose.position.x, agv_tray_pose.position.y,
+                                          agv_tray_pose.position.z + 0.2, set_robot_orientation_(agv_rotation)));
+
+    if (!move_through_waypoints_(waypoints, 0.2, 0.2))
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move up");
+        return false;
+    }
+
     return true;
 }
 
@@ -417,7 +479,7 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
     {
         if (part.part.type == part_type && part.part.color == part_color)
         {
-            part_pose = Utils::multiply_poses(left_bins_camera_pose_, part.pose);
+            // part_pose = Utils::multiply_poses(left_bins_camera_pose_, part.pose);
             found_part = true;
             bin_side = "left_bins";
             break;
@@ -430,13 +492,14 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
         {
             if (part.part.type == part_type && part.part.color == part_color)
             {
-                part_pose = Utils::multiply_poses(right_bins_camera_pose_, part.pose);
+                // part_pose = Utils::multiply_poses(right_bins_camera_pose_, part.pose);
                 found_part = true;
                 bin_side = "right_bins";
                 break;
             }
         }
     }
+
     if (!found_part)
     {
         RCLCPP_ERROR(get_logger(), "Unable to locate the part");
@@ -466,7 +529,7 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
         return false;
     }
 
-    set_gripper_state_(true);
+    // set_gripper_state_(true);
 
     wait_for_attach_completion_(5.0);
 
@@ -478,6 +541,8 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
 
         // Attach tray to robot in planning scene
         floor_robot_->attachObject(part_name);
+        floor_robot_attached_part_.type = part_type;
+        floor_robot_attached_part_.color = part_color;
 
         // Move up slightly
         waypoints.clear();
@@ -495,22 +560,79 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
     return false;
 }
 
-// NEXT SECTION | WORK IN PROGRESS BY SHREEJAY
 //=============================================//
 void FloorRobot::move_part_to_agv_srv_cb(
     robot_msgs::srv::MovePartToAGV::Request::SharedPtr req, 
     robot_msgs::srv::MovePartToAGV::Response::SharedPtr res)
     {
         auto agv_number = req->agv_number;
-        if (agv_number != 5){
+        auto quadrant = req->quadrant;
+
+        if (move_part_to_agv_(agv_number, quadrant))
+        {
             res->success = true;
+            res->message = "Part moved to the AGV";
+        }
+        else
+        {
+            res->success = false;
+            res->message = "Unable to move part to the AGV";
         }
     }
 
-bool FloorRobot::move_part_to_agv_(int agv_number)
+bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
 {
-    agv_number = 5;
-    return agv_number+1;
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    floor_robot_->setJointValueTarget("linear_actuator_joint", rail_positions_["agv" + std::to_string(agv_number)]);
+    floor_robot_->setJointValueTarget("floor_shoulder_pan_joint", 0);
+
+    if (!move_to_target_())
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move the part to AGV");
+        return false;
+    }
+
+    auto agv_tray_pose = get_pose_in_world_frame_("agv" + std::to_string(agv_number) + "_tray");
+
+    auto part_drop_offset = Utils::build_pose(quad_offsets_[quadrant].first, quad_offsets_[quadrant].second, 0.0,
+                                              geometry_msgs::msg::Quaternion());
+
+    auto part_drop_pose = Utils::multiply_poses(agv_tray_pose, part_drop_offset);
+
+
+    waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
+                                          part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
+
+    waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
+                                          part_drop_pose.position.z + part_heights_[floor_robot_attached_part_.type] + drop_height_,
+                                          set_robot_orientation_(0)));
+
+    move_through_waypoints_(waypoints, 0.3, 0.3);
+
+    // NOT REQUIRED HERE AS OF NOW - WILL ADD LATER IF NECESSARY - SHREEJAY
+    // Drop part in quadrant
+    // set_gripper_state_(false);
+
+    std::string part_name = part_colors_[floor_robot_attached_part_.color] +
+                            "_" + part_types_[floor_robot_attached_part_.type];
+                            
+    floor_robot_->detachObject(part_name);
+
+    waypoints.clear();
+    waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
+                                          part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
+
+    // WILL ADD LATER IF REQUIRED - SHREEJAY
+    // waypoints.push_back(Utils::build_pose(part_drop_pose..position.x, part_drop_pose..position.y,
+    //                                       part_drop_pose..position.z + kit_tray_thickness_ + drop_height_, set_robot_orientation_(0)));
+
+    if (!move_through_waypoints_(waypoints, 0.2, 0.1))
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move part to AGV");
+        return false;
+    }
+
+    return true;
 }
 
 //=============================================//
