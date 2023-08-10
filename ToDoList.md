@@ -26,8 +26,8 @@ This list outlines the necessary servers and clients that have been/need to be i
 ### Server added to floor_robot.cpp
 - [x] EnterToolChanger
 - [x] ExitToolChanger
-- [ ] MovePartToAGV - Shreejay
-- [ ] MoveRobotToPart - Shreejay
+- [x] MovePartToAGV - Shreejay
+- [x] MoveRobotToPart - Shreejay
 - [x] MoveRobotToTable
 - [x] MoveRobotToTray
 - [x] MoveTrayToAGV 
