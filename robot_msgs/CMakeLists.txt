@@ -19,6 +19,7 @@ set(srv_files
   "srv/ExitToolChanger.srv"
   "srv/MoveRobotToPart.srv"
   "srv/MovePartToAGV.srv"
+  "srv/DropTray.srv"
 )
 
 
