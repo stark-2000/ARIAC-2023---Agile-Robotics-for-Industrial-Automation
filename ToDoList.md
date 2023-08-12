@@ -9,7 +9,7 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [x] MoveRobotToTable.srv
 - [x] MoveRobotToTray.srv
 - [x] MoveTrayToAGV.srv
-- [ ] MoveRobotToBin.srv
+- [ ] MoveRobotToBin.srv - Tej
 - [ ] DiscardPart.srv - Ian
 
 ### Server added to floor_robot.hpp
@@ -20,8 +20,8 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [x] MoveRobotToTable
 - [x] MoveRobotToTray
 - [x] MoveTrayToAGV 
-- [ ] MoveRobotToBin
-- [ ] DiscardPart - Ian
+- [ ] MoveRobotToBin  - Tej
+- [ ] DiscardPart -Ian
 
 ### Server added to floor_robot.cpp
 - [x] EnterToolChanger
@@ -31,8 +31,8 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [x] MoveRobotToTable
 - [x] MoveRobotToTray
 - [x] MoveTrayToAGV 
-- [ ] MoveRobotToBin
-- [ ] DiscardPart -Ian
+- [ ] MoveRobotToBin  - Tej
+- [ ] DiscardPart - Ian
 
 ### Client added to orders_interface.py
 - [ ] EnterToolChanger
