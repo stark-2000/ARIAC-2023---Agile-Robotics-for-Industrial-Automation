@@ -96,6 +96,12 @@ FloorRobot::FloorRobot()
         std::bind(
             &FloorRobot::move_part_to_agv_srv_cb, this,
             std::placeholders::_1, std::placeholders::_2));
+    
+    move_robot_to_bin_srv_ = create_service<robot_msgs::srv::MoveRobotToBin>(
+        "/commander/move_robot_to_bin",
+        std::bind(
+            &FloorRobot::move_robot_to_bin_srv_cb, this,
+            std::placeholders::_1, std::placeholders::_2));
 
     tray_counter_ = int{1}; 
 
@@ -559,6 +565,45 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
 
     return false;
 }
+
+//=============================================//
+
+
+void FloorRobot::move_robot_to_bin_srv_cb(
+    robot_msgs::srv::MoveRobotToBin::Request::SharedPtr req, 
+    robot_msgs::srv::MoveRobotToBin::Response::SharedPtr res)
+    {
+        auto bin_location = req->bin_location;
+
+        if (move_robot_to_bin_(bin_location))
+        {
+            res->success = true;
+            res->message = "Robot moved to the BIN";
+        }
+        else
+        {
+            res->success = false;
+            res->message = "Unable to move robot to the BIN";
+        }
+    }
+
+
+    bool FloorRobot::move_robot_to_bin_(std::string bin_location){ 
+        
+        floor_robot_->setJointValueTarget("linear_actuator_joint", rail_positions_[bin_location]);
+        floor_robot_->setJointValueTarget("floor_shoulder_pan_joint", 0);
+
+        if (!move_to_target_())
+        {
+            RCLCPP_ERROR(get_logger(), "Unable to move the robot to bin");
+            return false;
+        }
+
+
+        return true;
+    }
+
+//=============================================//
 
 //=============================================//
 void FloorRobot::move_part_to_agv_srv_cb(

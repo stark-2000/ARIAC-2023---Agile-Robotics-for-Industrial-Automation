@@ -20,6 +20,7 @@ set(srv_files
   "srv/MoveRobotToPart.srv"
   "srv/MovePartToAGV.srv"
   "srv/DropTray.srv"
+  "srv/MoveRobotToBin.srv"
 )
 
 

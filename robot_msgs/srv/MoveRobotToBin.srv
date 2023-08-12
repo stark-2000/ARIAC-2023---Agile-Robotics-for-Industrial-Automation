@@ -1,0 +1,7 @@
+string BIN_LEFT='left_bin'
+string BIN_RIGHT='right_bin'
+
+string bin_location # BIN_LEFT, BIN_RIGHT
+---
+bool success
+string message
