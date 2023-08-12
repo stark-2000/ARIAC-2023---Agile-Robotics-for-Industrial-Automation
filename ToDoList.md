@@ -40,10 +40,10 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [ ] MoveRobotToPart - Tej
 - [x] MoveRobotToTable
 - [x] MoveRobotToTray
-- [ ] MoveTrayToAGV
-- [ ] MoveRobotToBin
-- [ ] DiscardPart
-- [ ] ChangeGripper
+- [ ] MoveTrayToAGV - Tim
+- [ ] MoveRobotToBin - Tim
+- [ ] DiscardPart - Tim
+- [ ] ChangeGripper - Tim
 
 ### Robot Poistions Defined in floor_robot.hpp
 - [x] Discard bin - Ian
