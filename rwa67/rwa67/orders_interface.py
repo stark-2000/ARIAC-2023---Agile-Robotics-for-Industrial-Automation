@@ -7,11 +7,18 @@ from functools import partial
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import UInt8
-from ariac_msgs.msg import Order as OrderMsg, AdvancedLogicalCameraImage as ALCImage, CompetitionState, Part
-from ariac_msgs.srv import ChangeGripper
+from ariac_msgs.msg import (
+    Order as OrderMsg,
+    AdvancedLogicalCameraImage as ALCImage,
+    CompetitionState,
+    Part)
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from geometry_msgs.msg import Pose
 from std_srvs.srv import Trigger
+from ariac_msgs.srv import (
+    ChangeGripper,
+    VacuumGripperControl
+)
 
 # Import custom ROS services
 from robot_msgs.srv import (
