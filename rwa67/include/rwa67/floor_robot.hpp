@@ -55,6 +55,7 @@
 #include <robot_msgs/srv/drop_tray.hpp>
 #include <robot_msgs/srv/move_robot_to_part.hpp>
 #include <robot_msgs/srv/move_part_to_agv.hpp>
+#include <robot_msgs/srv/move_robot_to_bin.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <ariac_msgs/srv/move_agv.hpp>
 #include <std_msgs/msg/bool.hpp>
@@ -188,6 +189,8 @@ private:
 
     rclcpp::Service<robot_msgs::srv::MovePartToAGV>::SharedPtr move_part_to_agv_srv_;
 
+    rclcpp::Service<robot_msgs::srv::MoveRobotToBin>::SharedPtr move_robot_to_bin_srv_;
+
     int tray_counter_;
 
     /**
@@ -260,6 +263,16 @@ private:
     move_part_to_agv_srv_cb(
         robot_msgs::srv::MovePartToAGV::Request::SharedPtr req_, robot_msgs::srv::MovePartToAGV::Response::SharedPtr res_);
 
+  /**
+     * @brief Callback function for the service /commander/move_robot_to_bin
+     *
+     * @param req_ Shared pointer to robot_msgs::srv::MoveRobotToBin::Request
+     * @param res_ Shared pointer to robot_msgs::srv::MoveRobotToBin::Response
+     */
+    void
+    move_robot_to_bin_srv_cb(
+        robot_msgs::srv::MoveRobotToBin::Request::SharedPtr req_, robot_msgs::srv::MoveRobotToBin::Response::SharedPtr res_);
+
 
     /**
      * @brief Provide motion to the floor robot to move its base to one of the two tables.
@@ -321,6 +334,15 @@ private:
     bool move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose);
 
     bool move_part_to_agv_(int agv_number, int quadrant);
+    
+    /**
+     * @brief Move the robot to left or right bins on the linear rail
+     *
+     * @param bin_location Bin location left or right
+     * @return true Motion successful
+     * @return false Motion failed
+     */
+    bool move_robot_to_bin_(std::string bin_location);
 
     //=========== END PYTHON - C++ ===========//
 
