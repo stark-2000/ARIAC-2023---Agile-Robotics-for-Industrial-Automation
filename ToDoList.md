@@ -34,10 +34,10 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [ ] DiscardPart - Ian
 
 ### Client added to orders_interface.py
-- [x] EnterToolChanger - Arshad
-- [x] ExitToolChanger - Arshad
-- [ ] MovePartToAGV
-- [ ] MoveRobotToPart
+- [ ] EnterToolChanger - Arshad
+- [ ] ExitToolChanger - Arshad
+- [ ] MovePartToAGV - Tej
+- [ ] MoveRobotToPart - Tej
 - [x] MoveRobotToTable
 - [x] MoveRobotToTray
 - [ ] MoveTrayToAGV
