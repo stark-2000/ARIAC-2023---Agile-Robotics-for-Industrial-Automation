@@ -42,7 +42,7 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [x] MoveRobotToTray
 - [ ] MoveTrayToAGV
 - [ ] MoveRobotToBin
-- [ ] DiscardPart -Ian
+- [ ] DiscardPart
 - [ ] ChangeGripper
 
 ### Robot Poistions Defined in floor_robot.hpp
