@@ -43,7 +43,7 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [ ] MoveTrayToAGV - Tim
 - [ ] MoveRobotToBin - Tim
 - [ ] DiscardPart - Tim
-- [ ] ChangeGripper - Tim
+- [ ] ChangeGripper
 
 ### Robot Poistions Defined in floor_robot.hpp
 - [x] Discard bin - Ian
