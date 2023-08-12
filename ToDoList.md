@@ -35,8 +35,8 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [ ] DiscardPart
 
 ### Client added to orders_interface.py
-- [ ] EnterToolChanger
-- [ ] ExitToolChanger
+- [x] EnterToolChanger - Arshad
+- [x] ExitToolChanger - Arshad
 - [ ] MovePartToAGV
 - [ ] MoveRobotToPart
 - [x] MoveRobotToTable
@@ -44,7 +44,7 @@ This list outlines the necessary servers and clients that have been/need to be i
 - [ ] MoveTrayToAGV
 - [ ] MoveRobotToBin
 - [ ] DiscardPart
-- [ ] ChangeGripper
+- [ ] ChangeGripper - Arshad
 
 ### Robot Poistions Defined in floor_robot.hpp
 - [ ] Discard bin
