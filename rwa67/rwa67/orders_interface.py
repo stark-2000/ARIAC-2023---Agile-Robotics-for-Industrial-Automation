@@ -27,12 +27,9 @@ from robot_msgs.srv import (
     MoveRobotToTable,
     MoveRobotToTray,
     MoveTrayToAGV,
-<<<<<<< HEAD
     MoveRobotToPart,
     MovePartToAGV,
-=======
     DiscardPart
->>>>>>> 02889d7e9f9d90ebebc8193a7b21f48919d7d12c
 )
 
 class GripperTypes(Enum):
@@ -414,10 +411,10 @@ class OrderManager(Node):
             continue
         self._exited_tool_changer = False
 
-        # self._move_robot_to_table(station.value)
-        # while(not self._changed_gripper):
-        #     continue
-        # self._exited_tool_changer = False
+        self._activate_gripper()
+        while(not self._activated_gripper):
+            continue
+        self._activated_gripper = False
 
         self._move_robot_to_tray(target_tray, tray_pose)
         while(not self._moved_robot_to_tray):
@@ -429,9 +426,10 @@ class OrderManager(Node):
             continue
         self._moved_tray_to_agv = False
 
-        #while(True):
-        #    continue
-        # self.place_tray(target_tray, target_agv)
+        self._deactivate_gripper()
+        while(not self._deactivated_gripper):
+            continue
+        self._deactivated_gripper = False
 
         # # Change gripper to part
         # self.change_gripper(station, GripperTypes.PART_GRIPPER)
@@ -667,7 +665,7 @@ class OrderManager(Node):
             self.get_logger().fatal(f'💀 {message}')
 
 
-    def pick_part(self, color: int, part_type: int, Pose: geometry_msgs::pose):
+    def pick_part(self, color: int, part_type: int, pose: Pose):
         '''
         Moves the floor robot to bin and pick up the part
         Args:
@@ -675,16 +673,16 @@ class OrderManager(Node):
             quadrant (int): Quadrant to which the part belongs to
         '''
         self.get_logger().info('👉 Moving robot to part...')
-                self._moved_robot_to_part = False
-            while not self._move_robot_to_part_cli.wait_for_service(timeout_sec=1.0):
-                self.get_logger().error('Service not available, waiting...')
+        self._moved_robot_to_part = False
+        while not self._move_robot_to_part_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error('Service not available, waiting...')
 
-            request = MoveRobotToPart.Request()
-            request.color = color
-            request.type = part_type
-            request.part_pose_in_world = Pose
-            future = self._move_robot_to_part_cli.call_async(request)
-            future.add_done_callback(self._move_robot_to_part_done_cb)
+        request = MoveRobotToPart.Request()
+        request.color = color
+        request.type = part_type
+        request.part_pose_in_world = pose
+        future = self._move_robot_to_part_cli.call_async(request)
+        future.add_done_callback(self._move_robot_to_part_done_cb)
 
     def _move_robot_to_part_done_cb(self, future):
         '''
@@ -713,7 +711,9 @@ class OrderManager(Node):
         while not self._exit_tool_changer_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')
 
+        '''
         output: result (boolean) - True for successful part pickup. False for failure
+        '''
         request = ExitToolChanger.Request()
         request.changing_station = station
         request.gripper_type = gripper_type
@@ -795,8 +795,8 @@ class OrderManager(Node):
             agv_number (int): AGV number
             quadrant (int): Quadrant to which the part belongs to
         '''
-         self.get_logger().info('👉 Move the robot and place part on AGV...')
-            self._moved_part_to_agv = False
+        self.get_logger().info('👉 Move the robot and place part on AGV...')
+        self._moved_part_to_agv = False
         while not self._move_part_to_agv_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().error('Service not available, waiting...')
 
