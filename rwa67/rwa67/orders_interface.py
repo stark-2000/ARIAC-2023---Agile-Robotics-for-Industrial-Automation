@@ -373,7 +373,6 @@ class OrderManager(Node):
             f'Fulfilling: {order.order_id}')
         target_tray = self._current_order.tray_id
         target_agv = self._current_order.agv_number
-        target_quadrant = self._current_order.
         tray_pose = None
         station = None
         for tray in self._kts1_inventory:
@@ -456,6 +455,7 @@ class OrderManager(Node):
         self._activate_gripper()
         while(not self._activated_gripper):
             continue
+
         self._activated_gripper = False
         for order_part in order.parts:
             part_found = False
@@ -698,7 +698,7 @@ class OrderManager(Node):
             self.get_logger().fatal(f'💀 {message}')
 
 
-    def pick_part(self, color: int, part_type: int, pose: Pose, bin: Bins):
+    def pick_part(self, color: int, part_type: int, pose: Pose, bins_location):
         '''
         Moves the floor robot to bin and pick up the part
         Args:
@@ -714,7 +714,7 @@ class OrderManager(Node):
         request.color = color
         request.type = part_type
         request.part_pose_in_world = pose
-        request.bin_location = 
+        request.bin_location = bins_location
         future = self._move_robot_to_part_cli.call_async(request)
         future.add_done_callback(self._move_robot_to_part_done_cb)
 
