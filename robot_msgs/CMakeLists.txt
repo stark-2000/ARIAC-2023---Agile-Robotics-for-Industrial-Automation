@@ -21,6 +21,7 @@ set(srv_files
   "srv/MovePartToAGV.srv"
   "srv/DropTray.srv"
   "srv/MoveRobotToBin.srv"
+  "srv/DiscardPart.srv"
 )
 
 
