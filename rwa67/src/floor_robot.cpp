@@ -483,43 +483,43 @@ void FloorRobot::move_robot_to_part_srv_cb_(
 
 bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose, std::string bin_location)
 {
-    bool found_part = false;
-    std::string bin_side;
+    // bool found_part = false;
+    // std::string bin_side;
 
-    // Check left bins
-    for (auto part : left_bins_parts_)
-    {
-        if (part.part.type == part_type && part.part.color == part_color)
-        {
-            // part_pose = Utils::multiply_poses(left_bins_camera_pose_, part.pose);
-            found_part = true;
-            bin_side = "left_bins";
-            break;
-        }
-    }
-    // Check right bins
-    if (!found_part)
-    {
-        for (auto part : right_bins_parts_)
-        {
-            if (part.part.type == part_type && part.part.color == part_color)
-            {
-                // part_pose = Utils::multiply_poses(right_bins_camera_pose_, part.pose);
-                found_part = true;
-                bin_side = "right_bins";
-                break;
-            }
-        }
-    }
+    // // Check left bins
+    // for (auto part : left_bins_parts_)
+    // {
+    //     if (part.part.type == part_type && part.part.color == part_color)
+    //     {
+    //         // part_pose = Utils::multiply_poses(left_bins_camera_pose_, part.pose);
+    //         found_part = true;
+    //         bin_side = "left_bins";
+    //         break;
+    //     }
+    // }
+    // // Check right bins
+    // if (!found_part)
+    // {
+    //     for (auto part : right_bins_parts_)
+    //     {
+    //         if (part.part.type == part_type && part.part.color == part_color)
+    //         {
+    //             // part_pose = Utils::multiply_poses(right_bins_camera_pose_, part.pose);
+    //             found_part = true;
+    //             bin_side = "right_bins";
+    //             break;
+    //         }
+    //     }
+    // }
 
-    if (!found_part)
-    {
-        RCLCPP_ERROR(get_logger(), "Unable to locate the part");
-        return false;
-    }
+    // if (!found_part)
+    // {
+    //     RCLCPP_ERROR(get_logger(), "Unable to locate the part");
+    //     return false;
+    // }
 
     std::vector<geometry_msgs::msg::Pose> waypoints;
-    floor_robot_->setJointValueTarget("linear_actuator_joint", rail_positions_[bin_side]);
+    floor_robot_->setJointValueTarget("linear_actuator_joint", rail_positions_[bin_location]);
     floor_robot_->setJointValueTarget("floor_shoulder_pan_joint", 0);
 
     if (!move_to_target_())
