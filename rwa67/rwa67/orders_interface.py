@@ -373,6 +373,7 @@ class OrderManager(Node):
             f'Fulfilling: {order.order_id}')
         target_tray = self._current_order.tray_id
         target_agv = self._current_order.agv_number
+        target_quadrant = self._current_order.
         tray_pose = None
         station = None
         for tray in self._kts1_inventory:
@@ -431,30 +432,62 @@ class OrderManager(Node):
             continue
         self._deactivated_gripper = False
 
-        # # Change gripper to part
-        # self.change_gripper(station, GripperTypes.PART_GRIPPER)
-        # for order_part in order.parts:
-        #     part_found = False
-        #     for item in self._left_bin_inventory:
-        #         if item.part == order_part.part:
-        #             self.pickup_part(
-        #                 item.part.color, item.part.type, item.pose)
-        #             part_found = True
-        #             break
-        #     if not part_found:
-        #         for item in self._right_bin_inventory:
-        #             if item.part == order_part.part:
-        #                 self.pickup_part(
-        #                     item.part.color, item.part.type, item.pose)
-        #                 part_found = True
-        #                 break
-        #     if not part_found:
-        #         self.get_logger().fatal(
-        #             f"Part not found. Can not complete order {order.order_id}")
-        #         return False
+        self._move_robot_to_table(station.value)
+        while(not self._moved_robot_to_table):
+            continue
+        self._moved_robot_to_table = False
+        
+        ######## ToDo MAKE ME NOT FIXED #######
+        self._enter_tool_changer("kts2", GripperTypes.TRAY_GRIPPER.value)
+        while(not self._entered_tool_changer):
+            continue
+        self._entered_tool_changer = False
+
+        self._change_gripper(ChangeGripper.Request.TRAY_GRIPPER)
+        while(not self._changed_gripper):
+            continue
+        self._changed_gripper = False
+
+        self._exit_tool_changer("kts"+ str(station.value), GripperTypes.TRAY_GRIPPER.value)
+        while(not self._exited_tool_changer):
+            continue
+        self._exited_tool_changer = False
+
+        self._activate_gripper()
+        while(not self._activated_gripper):
+            continue
+        self._activated_gripper = False
+        for order_part in order.parts:
+            part_found = False
+            bin_location = None
+            for item in self._left_bin_inventory:
+                if item.part == order_part.part:
+                    part_found = True
+                    bin_location = MoveRobotToPart.Request.BIN_LEFT
+                    self._left_bin_inventory.remove(item)
+                    break
+            if not part_found:
+                for item in self._right_bin_inventory:
+                    if item.part == order_part.part:
+                        part_found = True
+                        bin_location = MoveRobotToPart.Request.BIN_RIGHT
+                        self._right_bin_inventory.remove(item)
+                        break
+            if not part_found:
+                self.get_logger().fatal(
+                    f"Part not found. Can not complete order {order.order_id}")
+                return False
+            self.pickup_part(
+                            item.part.color, item.part.type, item.pose, bin_location)
+            while(not self.__moved_robot_to_part):
+                continue
+            self._moved_robot_to_part = False
+
+            self.place_part(target_agv, order_part.quadrant)
+
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
-        # self.complete_order()
+        self.complete_order()
 
 
     # def _robot_action_cb(self):
@@ -665,7 +698,7 @@ class OrderManager(Node):
             self.get_logger().fatal(f'💀 {message}')
 
 
-    def pick_part(self, color: int, part_type: int, pose: Pose):
+    def pick_part(self, color: int, part_type: int, pose: Pose, bin: Bins):
         '''
         Moves the floor robot to bin and pick up the part
         Args:
@@ -681,6 +714,7 @@ class OrderManager(Node):
         request.color = color
         request.type = part_type
         request.part_pose_in_world = pose
+        request.bin_location = 
         future = self._move_robot_to_part_cli.call_async(request)
         future.add_done_callback(self._move_robot_to_part_done_cb)
 
