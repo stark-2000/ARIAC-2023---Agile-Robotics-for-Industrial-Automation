@@ -26,12 +26,18 @@ from robot_msgs.srv import (
     ExitToolChanger,
     MoveRobotToTable,
     MoveRobotToTray,
-    MoveTrayToAGV
+    MoveTrayToAGV,
+<<<<<<< HEAD
+    MoveRobotToPart,
+    MovePartToAGV,
+=======
+    DiscardPart
+>>>>>>> 02889d7e9f9d90ebebc8193a7b21f48919d7d12c
 )
 
 class GripperTypes(Enum):
-    TRAY_GRIPPER = 'tray gripper'
-    PART_GRIPPER = 'part gripper'
+    TRAY_GRIPPER = 'trays'
+    PART_GRIPPER = 'parts'
 
 
 class TrayStations(Enum):
@@ -105,9 +111,6 @@ class OrderManager(Node):
         self._kts2_data_received = False
         self._started_orders = False
 
-        # Callback groups to allow multiple callbacks to be called at the same time
-        timer_cb_group = MutuallyExclusiveCallbackGroup()
-        subscriber_cb_group = MutuallyExclusiveCallbackGroup()
 
         # Multiple flags to trigger the robot actions
 
@@ -136,18 +139,33 @@ class OrderManager(Node):
         self._deactivated_gripper = False
         self._moved_robot_to_tray = False
         self._moved_tray_to_agv = False
+        self._moved_robot_to_part = False
+        self._moved_part_to_agv = False
 
-        # Subscriber to listen for orders
-        self._order_subscriber = self.create_subscription(
-            OrderMsg, 'ariac/orders', self.order_callback, 10)
+
+        # ----------- Callback Groups ----------
+
+        timer_cb_group = MutuallyExclusiveCallbackGroup()
+        subscriber_cb_group = MutuallyExclusiveCallbackGroup()
+        self._fulfillment_callback_group = MutuallyExclusiveCallbackGroup()
+
+
+        # ---------- Publishers ---------------
+
         # Publisher to notify that order is ready to ship
         self._order_ship_publisher = self.create_publisher(
             UInt8, 'ship_order', 10)
 
-        self._fulfillment_callback_group = MutuallyExclusiveCallbackGroup()
 
+        # ---------- Subscribers --------------
+
+        # Subscriber to listen for orders
+        self._order_subscriber = self.create_subscription(
+            OrderMsg, 'ariac/orders', self.order_callback, 10,)
+        
         self._competition_state_subscriber = self.create_subscription(
-            CompetitionState, 'ariac/competition_state', self.comp_state_callback, 10, callback_group=self._fulfillment_callback_group)
+            CompetitionState, 'ariac/competition_state', self.comp_state_callback, 10, 
+            callback_group=self._fulfillment_callback_group)
 
         # Subscribers to receive updated poses with world frame
         self._left_bin_parts_data_subscriber = self.create_subscription(
@@ -162,15 +180,80 @@ class OrderManager(Node):
         self._kts2_tray_data_subscriber = self.create_subscription(
             ALCImage, '/kitting_tray2_camera_data', self.kts2_callback, qos_profile_sensor_data)
 
-        
-        self._move_robot_to_tray_cli = self.create_client(
-            MoveRobotToTray, '/commander/move_robot_to_tray')
-        
+
+        # ---------- Clients -------------
+
+        # client to start the competition
+        self._start_competition_cli = self.create_client(
+            Trigger,
+            '/ariac/start_competition')
+
+        # client to move the floor robot to the home position
+        self._move_robot_home_cli = self.create_client(
+            Trigger,
+            '/commander/move_robot_home')
+
         # client to move a robot to a table
         self._move_robot_to_table_cli = self.create_client(
             MoveRobotToTable,
             '/commander/move_robot_to_table')
+        
+        # client to move a robot to a part
+        self._move_robot_to_part_cli = self.create_client(
+            MoveRobotToTable,
+            '/commander/move_robot_to_part')
+        
+        # client to move a part to a AGV
+        self._move_part_to_agv_cli = self.create_client(
+            MoveRobotToTable,
+            '/commander/move_part_to_agv')
 
+        # client to move a robot to a table
+        self._move_robot_to_tray_cli = self.create_client(
+            MoveRobotToTray,
+            '/commander/move_robot_to_tray')
+
+        # client to move a tray to an agv
+        self._move_tray_to_agv_cli = self.create_client(
+            MoveTrayToAGV,
+            '/commander/move_tray_to_agv')
+
+        # client to move the end effector inside a tool changer
+        self._enter_tool_changer_cli = self.create_client(
+            EnterToolChanger,
+            '/commander/enter_tool_changer')
+
+        # client to move the end effector outside a tool changer
+        self._exit_tool_changer_cli = self.create_client(
+            ExitToolChanger,
+            '/commander/exit_tool_changer')
+        
+        # client to discard a part
+        self._discard_part_cli = self.create_client(
+            DiscardPart,
+            '/commander/discard_part')
+
+        # client to activate/deactivate the vacuum gripper
+        self._set_gripper_state_cli = self.create_client(
+            VacuumGripperControl,
+            '/ariac/floor_robot_enable_gripper')
+
+        # client to change the gripper type
+        # the end effector must be inside the tool changer before calling this service
+        self._change_gripper_cli = self.create_client(
+            ChangeGripper,
+            '/ariac/floor_robot_change_gripper')
+
+        # ---------- Timer --------------
+
+        # Timer to trigger the robot actions
+        # Every second the timer callback is called and based on the flags the robot actions are triggered
+        # self._robot_action_timer = self.create_timer(1,
+        #                                              self._robot_action_cb,
+        #                                              callback_group=timer_cb_group)
+
+
+    #  Callback functions for receiving camera images/world poses
     def left_bin_callback(self, camera_msg: ALCImage):
         for part_pose in camera_msg.part_poses:
             self._left_bin_inventory.append(part_pose)
@@ -191,9 +274,12 @@ class OrderManager(Node):
             self._kts2_inventory.append(tray_pose)
         self._kts2_data_received = True
 
+    # function to start the competition
+    # and continuously call fulfill_order
     def comp_state_callback(self, state_msg: CompetitionState):
         if (state_msg.competition_state == CompetitionState.READY):
             self._started_orders = True
+            self._competition_started = True
             self.get_logger().info(
                 'starting orders')
             while (True):
@@ -202,6 +288,8 @@ class OrderManager(Node):
                     and self._kts1_data_received
                         and self._kts2_data_received):
                     self.fulfill_order()
+                self.get_logger().info(
+                'waiting for camera info')   
                 time.sleep(0.2)
 
     def order_callback(self, order_msg: OrderMsg):
@@ -305,14 +393,44 @@ class OrderManager(Node):
             self.get_logger().fatal(
                 f"Tray {target_tray} not found. Can not complete order {order.order_id}")
             return False
-
-        # Change gripper to tray
-        #self.change_gripper(station, GripperTypes.TRAY_GRIPPER)
+        
         self._move_robot_to_table(station.value)
-        self._move_robot_to_tray(target_tray, tray_pose)
-        self.pick_up_tray(target_tray, tray_pose)
-        while(True):
+        while(not self._moved_robot_to_table):
             continue
+        self._moved_robot_to_table = False
+        
+        self._enter_tool_changer("kts"+ str(station.value), GripperTypes.TRAY_GRIPPER.value)
+        while(not self._entered_tool_changer):
+            continue
+        self._entered_tool_changer = False
+
+        self._change_gripper(ChangeGripper.Request.TRAY_GRIPPER)
+        while(not self._changed_gripper):
+            continue
+        self._changed_gripper = False
+
+        self._exit_tool_changer("kts"+ str(station.value), GripperTypes.TRAY_GRIPPER.value)
+        while(not self._exited_tool_changer):
+            continue
+        self._exited_tool_changer = False
+
+        # self._move_robot_to_table(station.value)
+        # while(not self._changed_gripper):
+        #     continue
+        # self._exited_tool_changer = False
+
+        self._move_robot_to_tray(target_tray, tray_pose)
+        while(not self._moved_robot_to_tray):
+            continue
+        self._moved_robot_to_tray = False
+
+        self._move_tray_to_agv(target_agv)
+        while(not self._moved_tray_to_agv):
+            continue
+        self._moved_tray_to_agv = False
+
+        #while(True):
+        #    continue
         # self.place_tray(target_tray, target_agv)
 
         # # Change gripper to part
@@ -340,110 +458,115 @@ class OrderManager(Node):
         #                     order_part.quadrant)
         # self.complete_order()
 
-    def change_gripper(self, table_name, gripper_type):
-        """! callback to a service - ChangeGripper - format: "call_servicename_server"
 
-        @param table_name   The station name or table name in which tray is located; of type: TrayStations
-        @param gripper_type The type of the gripper - part gripper or tray gripper; of type: GripperTypes
+    # def _robot_action_cb(self):
+    #     '''
+    #     Timer callback function to trigger the robot actions
+    #     '''
 
-        @return None
-        """
+    #     # self.get_logger().info('🚀 Robot action timer callback called')
+    #     # exit the callback if the kit is completed
+    #     if self._kit_completed:
+    #         return
 
-        self.get_logger().info(
-            f'Changing to {gripper_type.value} at {table_name.value}')
-        return
+    #     # move robot home
+    #     if self._competition_started:
+    #         if not self._robot_moving_to_home:
+    #             self._move_robot_home()
 
-    def pick_up_tray(self, id, pose):
-        """
-        Function for picking up a tray
+    #     # move to table
+    #     if self._robot_moved_to_home:
+    #         if not self._moving_robot_to_table:
+    #             # using KTS1 constant from MoveRobotToTable.srv
+    #             self._move_robot_to_table(MoveRobotToTable.Request.KTS1)
 
-        Parameters:
-            id (int): The id of the tray to be picked up
-            pose (Pose): The pose of the tray to be picked up
-        """
+    #     # enter tool changer
+    #     if self._moved_robot_to_table:
+    #         if not self._entering_tool_changer:
+    #             self._enter_tool_changer('kts1', 'trays')
 
-        self.get_logger().info(
-            f'Picking up tray {str(id)} at '\
-                f'[{pose.position.x} {pose.position.y} {pose.position.z}]' \
-                f'[{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}]')
+    #     # change gripper
+    #     if self._entered_tool_changer:
+    #         if not self._changing_gripper:
+    #             # using PART_GRIPPER constant from ChangeGripper.srv
+    #             self._change_gripper(ChangeGripper.Request.TRAY_GRIPPER)
 
-    def place_tray(self, id, agv):
-        """
-        Function for placing a tray
+    #     # exit tool changer
+    #     if self._changed_gripper:
+    #         if not self._exiting_tool_changer:
+    #             self._exit_tool_changer('kts1', 'trays')
 
-        Parameters:
-            id (int): The id of the tray to be placed
-            agv (int): The agv to place the tray on
-        """
+    #     # activate gripper
+    #     if self._exited_tool_changer:
+    #         if not self._activating_gripper:
+    #             self._activate_gripper()
 
-        self.get_logger().info(f'Placing tray {id} on agv {agv}')
+    #     # move to tray
+    #     if self._activated_gripper:
+    #         if not self._moving_robot_to_tray:
+    #             # TODO: get the tray id and pose from the vision system
+    #             tray_id = MoveRobotToTray.Request.TRAY_ID3
+    #             tray_pose = Pose()
+    #             tray_pose.position.x = -0.870000
+    #             tray_pose.position.y = -5.840000
+    #             tray_pose.position.z = 0.734990
+    #             tray_pose.orientation.x = 0.0
+    #             tray_pose.orientation.y = 0.0
+    #             tray_pose.orientation.z = 1.0
+    #             tray_pose.orientation.w = 0.0
+    #             self._move_robot_to_tray(tray_id, tray_pose)
 
-    def pickup_part(self, color: int, part_type: int, pose: Pose):
-        '''
-        Function for picking up a part
-        input: color - the color of the part to be picked up
-               type - the type of part to be picked up
+    #     # move tray to agv
+    #     # TODO: Check whether the tray is picked up by using
+    #     # a subscriber to /ariac/floor_robot_gripper_state
+    #     if self._moved_robot_to_tray:
+    #         if not self._moving_tray_to_agv:
+    #             self._move_tray_to_agv(MoveTrayToAGV.Request.AGV3)
 
-        output: result (boolean) - True for successful part pickup. False for failure
+    #     # deactivate gripper
+    #     # TODO: Check whether the tray is not attached to the gripper
+    #     if self._moved_tray_to_agv:
+    #         if not self._deactivating_gripper:
+    #             self._deactivate_gripper()
 
-        Future work:
-            This function will need to return a future callback that will provide the result of picking up the part
-        '''
+    #     # move robot home
+    #     if self._moved_tray_to_agv:
+    #         if self._deactivated_gripper:
+    #             if not self._ending_demo:
+    #                 self._move_robot_home(end_demo=True)
 
-        self.get_logger().info(
-            f'Picking up {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} '\
-                f'located at [{pose.position.x} {pose.position.y} {pose.position.z}] ' \
-                f'[{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}]')
 
-        return True
+    # def _move_robot_home(self, end_demo=False):
+    #     '''
+    #     Move the floor robot to its home position
+    #     '''
 
-    def place_part(self, color: int, part_type: int, tray_id: int, quadrant: int):
-        '''
-        Function for placing a part
-        input: color - the color of the part to be picked up
-               type - the type of part to be picked up
-               tray_id - the id of the tray to place the part in
-               quadrent - the quadrant in the tray to place the part in
+    #     self.get_logger().info('👉 Moving robot home...')
+    #     if end_demo:
+    #         self._ending_demo = True
+    #     else:
+    #         self._robot_moving_to_home = True
 
-        output: result (boolean) - True for successful part pickup. False for failure
+    #     while not self._move_robot_home_cli.wait_for_service(timeout_sec=1.0):
+    #         self.get_logger().info('Service not available, waiting...')
 
-        Future work:
-            This function will need to return a future callback that will provide the result of picking up the part
-        '''
+    #     request = Trigger.Request()
+    #     future = self._move_robot_home_cli.call_async(request)
+    #     future.add_done_callback(self._move_robot_home_done_cb)
 
-        self.get_logger().info(
-            f"Placing {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} in quadrant {quadrant} in tray {tray_id}")
+    # def _move_robot_home_done_cb(self, future):
+    #     '''
+    #     Client callback for the service /competitor/floor_robot/go_home
 
-        return True
-
-    def _move_robot_to_tray(self, tray_id, tray_pose):
-        '''
-        Move the floor robot to a tray to pick it up
-        '''
-        self.get_logger().info('👉 Moving robot to tray...')
-        self._moving_robot_to_tray = True
-        while not self._move_robot_to_tray_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().error('Service not available, waiting...')
-
-        request = MoveRobotToTray.Request()
-        request.tray_id = tray_id
-        request.tray_pose_in_world = tray_pose
-        future = self._move_robot_to_tray_cli.call_async(request)
-        future.add_done_callback(self._move_robot_to_tray_done_cb)
-
-    def _move_robot_to_tray_done_cb(self, future):
-        '''
-        Client callback for the service /commander/move_robot_to_tray
-
-        Args:
-            future (Future): A future object
-        '''
-        message = future.result().message
-        if future.result().success:
-            self.get_logger().info(f'✅ {message}')
-            self._moved_robot_to_tray = True
-        else:
-            self.get_logger().fatal(f'💀 {message}')
+    #     Args:
+    #         future (Future): A future object
+    #     '''
+    #     message = future.result().message
+    #     if future.result().success:
+    #         self.get_logger().info(f'✅ {message}')
+    #         self._robot_moved_to_home = True
+    #     else:
+    #         self.get_logger().fatal(f'💀 {message}')
 
     def _move_robot_to_table(self, table_id):
         '''
@@ -474,5 +597,280 @@ class OrderManager(Node):
         if future.result().success:
             self.get_logger().info(f'✅ {message}')
             self._moved_robot_to_table = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _enter_tool_changer(self, station, gripper_type):
+        '''
+        Move the end effector inside a tool changer
+
+        Args:
+            station (str): 'kts1' or 'kts2'
+            gripper_type (str): 'parts' or 'trays'
+        '''
+        self.get_logger().info('👉 Entering tool changer...')
+        self._entering_tool_changer = True
+        self.get_logger().info(gripper_type)
+        while not self._enter_tool_changer_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = EnterToolChanger.Request()
+        request.changing_station = station
+        request.gripper_type = gripper_type
+        future = self._enter_tool_changer_cli.call_async(request)
+        future.add_done_callback(self._enter_tool_changer_done_cb)
+
+    def _enter_tool_changer_done_cb(self, future):
+        '''
+        Client callback for the service /commander/enter_tool_changer
+
+        output: result (boolean) - True for successful part pickup. False for failure
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._entered_tool_changer = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _change_gripper(self, gripper_type):
+        '''
+        Change the gripper
+        Args:
+            station (str): 'kts1' or 'kts2'
+            gripper_type (str): 'parts' or 'trays'
+        '''
+        self.get_logger().info('👉 Changing gripper...')
+        self._changing_gripper = True
+        while not self._change_gripper_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = ChangeGripper.Request()
+        request.gripper_type = gripper_type
+        future = self._change_gripper_cli.call_async(request)
+        future.add_done_callback(self._change_gripper_done_cb)
+
+    def _change_gripper_done_cb(self, future):
+        '''
+        Client callback for the service /ariac/floor_robot_change_gripper
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info('✅ Gripper changed')
+            self._changed_gripper = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+
+    def pick_part(self, color: int, part_type: int, Pose: geometry_msgs::pose):
+        '''
+        Moves the floor robot to bin and pick up the part
+        Args:
+            agv_number (int): AGV number
+            quadrant (int): Quadrant to which the part belongs to
+        '''
+        self.get_logger().info('👉 Moving robot to part...')
+                self._moved_robot_to_part = False
+            while not self._move_robot_to_part_cli.wait_for_service(timeout_sec=1.0):
+                self.get_logger().error('Service not available, waiting...')
+
+            request = MoveRobotToPart.Request()
+            request.color = color
+            request.type = part_type
+            request.part_pose_in_world = Pose
+            future = self._move_robot_to_part_cli.call_async(request)
+            future.add_done_callback(self._move_robot_to_part_done_cb)
+
+    def _move_robot_to_part_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_robot_to_part
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_robot_to_part = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _exit_tool_changer(self, station, gripper_type):
+        '''
+        Move the end effector outside a tool changer
+
+        Args:
+            station (str): 'kts1' or 'kts2'
+            gripper_type (str): 'parts' or 'trays'
+        '''
+        self.get_logger().info('👉 Exiting tool changer...')
+        self._exiting_tool_changer = True
+        while not self._exit_tool_changer_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        output: result (boolean) - True for successful part pickup. False for failure
+        request = ExitToolChanger.Request()
+        request.changing_station = station
+        request.gripper_type = gripper_type
+        future = self._exit_tool_changer_cli.call_async(request)
+        future.add_done_callback(self._exit_tool_changer_done_cb)
+
+    def _exit_tool_changer_done_cb(self, future):
+        '''
+        Client callback for the service /commander/exit_tool_changer
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._exited_tool_changer = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _activate_gripper(self):
+        '''
+        Activate the gripper
+        '''
+        self.get_logger().info('👉 Activating gripper...')
+        self._activating_gripper = True
+        while not self._set_gripper_state_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = VacuumGripperControl.Request()
+        request.enable = True
+        future = self._set_gripper_state_cli.call_async(request)
+        future.add_done_callback(self._activate_gripper_done_cb)
+
+    def _activate_gripper_done_cb(self, future):
+        '''
+        Client callback for the service /ariac/floor_robot_enable_gripper
+
+        Args:
+            future (Future): A future object
+        '''
+        if future.result().success:
+            self.get_logger().info('✅ Gripper activated')
+            self._activated_gripper = True
+        else:
+            self.get_logger().fatal('💀 Gripper not activated')
+
+    def _deactivate_gripper(self):
+        '''
+        Deactivate the gripper
+        '''
+        self.get_logger().info('👉 Deactivating gripper...')
+        self._deactivating_gripper = True
+        while not self._set_gripper_state_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = VacuumGripperControl.Request()
+        request.enable = False
+        future = self._set_gripper_state_cli.call_async(request)
+        future.add_done_callback(self._deactivate_gripper_done_cb)
+
+    def _deactivate_gripper_done_cb(self, future):
+        '''
+        Client callback for the service /ariac/floor_robot_enable_gripper
+
+        Args:
+            future (Future): A future object
+        '''
+        if future.result().success:
+            self.get_logger().info('✅ Gripper deactivated')
+            self._deactivated_gripper = True
+        else:
+            self.get_logger().fatal('💀 Gripper not deactivated')
+
+
+    def place_part(self, agv_number: int, quadrant: int):
+        '''
+        Move floor robot to agv and place the part
+        Args:
+            agv_number (int): AGV number
+            quadrant (int): Quadrant to which the part belongs to
+        '''
+         self.get_logger().info('👉 Move the robot and place part on AGV...')
+            self._moved_part_to_agv = False
+        while not self._move_part_to_agv_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error('Service not available, waiting...')
+
+        request = MovePartToAGV.Request()
+        request.agv_number = agv_number
+        request.quadrant = quadrant
+        future = self._move_part_to_agv_cli.call_async(request)
+        future.add_done_callback(self._move_part_to_agv_done_cb)
+
+    def _move_part_to_agv_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_part_to_agv
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_part_to_agv = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _move_robot_to_tray(self, tray_id, tray_pose):
+        '''
+        Move the floor robot to a tray to pick it up
+        '''
+        self.get_logger().info('👉 Moving robot to tray...')
+        self._moving_robot_to_tray = True
+        while not self._move_robot_to_tray_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error('Service not available, waiting...')
+
+        request = MoveRobotToTray.Request()
+        request.tray_id = tray_id
+        request.tray_pose_in_world = tray_pose
+        future = self._move_robot_to_tray_cli.call_async(request)
+        future.add_done_callback(self._move_robot_to_tray_done_cb)
+
+    def _move_robot_to_tray_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_robot_to_tray
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_robot_to_tray = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    # @brief Move the floor robot to its home position
+    def _move_tray_to_agv(self, agv_number):
+        self._moving_tray_to_agv = True
+
+        while not self._move_tray_to_agv_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = MoveTrayToAGV.Request()
+        request.agv_number = agv_number
+        future = self._move_tray_to_agv_cli.call_async(request)
+        future.add_done_callback(self._move_tray_to_agv_done_cb)
+
+    def _move_tray_to_agv_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_tray_to_agv
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_tray_to_agv = True
         else:
             self.get_logger().fatal(f'💀 {message}')
