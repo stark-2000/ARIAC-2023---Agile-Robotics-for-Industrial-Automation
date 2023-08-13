@@ -11,13 +11,15 @@ from ariac_msgs.msg import (
     Order as OrderMsg,
     AdvancedLogicalCameraImage as ALCImage,
     CompetitionState,
-    Part)
+    Part,
+    KittingPart)
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from geometry_msgs.msg import Pose
 from std_srvs.srv import Trigger
 from ariac_msgs.srv import (
     ChangeGripper,
-    VacuumGripperControl
+    VacuumGripperControl,
+    PerformQualityCheck
 )
 
 # Import custom ROS services
@@ -40,7 +42,6 @@ class GripperTypes(Enum):
 class TrayStations(Enum):
     KTS_1 = 1
     KTS_2 = 2
-
 
 class Order:
     ''' 
@@ -138,7 +139,15 @@ class OrderManager(Node):
         self._moved_tray_to_agv = False
         self._moved_robot_to_part = False
         self._moved_part_to_agv = False
+        self._parts_quality_check = False
 
+        # Dictionary for informing the faulty part quadrant
+        self._Faulty_Parts_Quadrants = {
+            KittingPart.QUADRANT1 : False,
+            KittingPart.QUADRANT2 : False,
+            KittingPart.QUADRANT3 : False,
+            KittingPart.QUADRANT4 : False
+            }
 
         # ----------- Callback Groups ----------
 
@@ -240,6 +249,14 @@ class OrderManager(Node):
         self._change_gripper_cli = self.create_client(
             ChangeGripper,
             '/ariac/floor_robot_change_gripper')
+
+        # client to change the gripper type
+        # the end effector must be inside the tool changer before calling this service
+        self._parts_quality_check_cli = self.create_client(
+            PerformQualityCheck,
+            '/ariac/perform_quality_check')
+
+            
 
         # ---------- Timer --------------
 
@@ -697,6 +714,65 @@ class OrderManager(Node):
         else:
             self.get_logger().fatal(f'💀 {message}')
 
+  
+    def perform_quality_check(self, order_id):
+        '''
+        performs quality check on the parts placed on AGV
+        Args:
+            order_id (str): Order ID
+        '''
+        self.get_logger().info('👉 Performing quality check...')
+        
+        # Reset Quality check quadrants dictionary
+        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT1] = False
+        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT2] = False
+        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT3] = False
+        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT4] = False
+
+        self._parts_quality_check = False
+
+        while not self._parts_quality_check_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = PerformQualityCheck.Request()
+        request.order_id = order_id
+        future = self._parts_quality_check_cli.call_async(request)
+        future.add_done_callback(self._quality_check_done_cb)
+
+    def _quality_check_done_cb(self, future):
+        '''
+        Client callback for the service /ariac/perform_quality_check
+
+        Args:
+            future (Future): A future object
+        '''
+        quality_status = future.result().all_passed
+        valid_id = future.result().valid_id
+        incorrect_tray = future.result().incorrect_tray
+
+        self._parts_quality_check = True
+
+        if quality_status:
+            self.get_logger().info('✅ Quality Check Passed.')
+        else:
+            self.get_logger().fatal(f'💀 Quality check : Faulty detected.')
+            if not valid_id:
+                self.get_logger().fatal(f'💀 Quality check : Invalid order id.')
+            if not incorrect_tray:
+                self.get_logger().fatal(f'💀 Quality check : Icnorrect Tray id.')
+
+            if future.result().quadrant1.faulty_part:
+                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT1] = True
+                self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q1')
+            if future.result().quadrant2.faulty_part:
+                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT2] = True
+                self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q2')
+            if future.result().quadrant3.faulty_part:
+                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT3] = True
+                self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q3')
+            if future.result().quadrant4.faulty_part:
+                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT4] = True
+                self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q4')
 
     def pick_part(self, color: int, part_type: int, pose: Pose, bins_location):
         '''
