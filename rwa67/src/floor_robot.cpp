@@ -639,7 +639,7 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
 
     if (!move_to_target_())
     {
-        RCLCPP_ERROR(get_logger(), "Unable to move to faulty part");
+        RCLCPP_ERROR(get_logger(), "Unable to move to part");
         return false;
     }
 
