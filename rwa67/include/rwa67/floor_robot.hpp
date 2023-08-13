@@ -341,7 +341,7 @@ private:
      */
     bool exit_tool_changer_(std::string changing_station, std::string gripper_type);
 
-    bool move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose);
+    bool move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose, std::string bin_location);
 
     bool move_part_to_agv_(int agv_number, int quadrant);
     

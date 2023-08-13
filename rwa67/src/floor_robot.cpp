@@ -466,8 +466,9 @@ void FloorRobot::move_robot_to_part_srv_cb_(
         auto part_color = req->color;
         auto part_type = req->type;
         auto part_pose = req->part_pose_in_world;
+        auto bin_location = req->bin_location;
 
-        if (move_robot_to_part_(part_color, part_type, part_pose))
+        if (move_robot_to_part_(part_color, part_type, part_pose, bin_location))
         {
             res->success = true;
             res->message = "Robot moved to the part";
@@ -480,7 +481,7 @@ void FloorRobot::move_robot_to_part_srv_cb_(
 
     }
 
-bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose)
+bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose, std::string bin_location)
 {
     bool found_part = false;
     std::string bin_side;
