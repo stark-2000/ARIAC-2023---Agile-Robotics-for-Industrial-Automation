@@ -35,6 +35,11 @@ FloorRobot::FloorRobot()
     gripper_options.callback_group = gripper_cbg_;
 
 
+    // subscription to /ariac/floor_robot_gripper/state
+    floor_gripper_state_sub_ = this->create_subscription<ariac_msgs::msg::VacuumGripperState>(
+        "/ariac/floor_robot_gripper_state", rclcpp::QoS(rclcpp::KeepLast(1)).best_effort().durability_volatile(),
+        std::bind(&FloorRobot::floor_gripper_state_cb, this, std::placeholders::_1), gripper_options);
+        
     // client to /ariac/perform_quality_check
     quality_checker_ = this->create_client<ariac_msgs::srv::PerformQualityCheck>("/ariac/perform_quality_check");
     // client to /ariac/floor_robot_change_gripper
