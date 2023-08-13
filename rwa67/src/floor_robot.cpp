@@ -188,8 +188,8 @@ bool FloorRobot::move_robot_to_table_(int kts)
         return false;
     }
 
-    move_to_target_();
-    return true;
+    bool retval =  move_to_target_();
+    return retval;
 }
 
 //=============================================//

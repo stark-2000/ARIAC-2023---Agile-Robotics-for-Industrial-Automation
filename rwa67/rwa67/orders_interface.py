@@ -141,6 +141,9 @@ class OrderManager(Node):
         self._moved_part_to_agv = False
         self._parts_quality_check = False
 
+        # flags for errors
+        self._table_path_failed = False
+
         # Dictionary for informing the faulty part quadrant
         self._Faulty_Parts_Quadrants = {
             KittingPart.QUADRANT1 : False,
@@ -448,13 +451,17 @@ class OrderManager(Node):
             continue
         self._deactivated_gripper = False
 
-        self._move_robot_to_table(station.value)
+        #self._move_robot_to_table(station.value)
+        self._move_robot_to_table(TrayStations.KTS_1.value)
         while(not self._moved_robot_to_table):
+            if self._table_path_failed == True:
+                self._move_robot_to_table(TrayStations.KTS_2.value)
+                self._table_path_failed = False
             continue
         self._moved_robot_to_table = False
         
         ######## ToDo MAKE ME NOT FIXED #######
-        self._enter_tool_changer("kts2", GripperTypes.TRAY_GRIPPER.value)
+        self._enter_tool_changer("kts2", GripperTypes.PART_GRIPPER.value)
         while(not self._entered_tool_changer):
             continue
         self._entered_tool_changer = False
@@ -646,6 +653,7 @@ class OrderManager(Node):
             self.get_logger().info(f'✅ {message}')
             self._moved_robot_to_table = True
         else:
+            self._table_path_failed = True
             self.get_logger().fatal(f'💀 {message}')
 
     def _enter_tool_changer(self, station, gripper_type):
