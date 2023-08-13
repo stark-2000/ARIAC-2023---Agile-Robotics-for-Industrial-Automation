@@ -26,7 +26,9 @@ from robot_msgs.srv import (
     ExitToolChanger,
     MoveRobotToTable,
     MoveRobotToTray,
-    MoveTrayToAGV
+    MoveTrayToAGV,
+    MoveRobotToPart,
+    MovePartToAGV,
 )
 
 class GripperTypes(Enum):
@@ -136,6 +138,8 @@ class OrderManager(Node):
         self._deactivated_gripper = False
         self._moved_robot_to_tray = False
         self._moved_tray_to_agv = False
+        self._moved_robot_to_part = False
+        self._moved_part_to_agv = False
 
         # Subscriber to listen for orders
         self._order_subscriber = self.create_subscription(
@@ -170,6 +174,16 @@ class OrderManager(Node):
         self._move_robot_to_table_cli = self.create_client(
             MoveRobotToTable,
             '/commander/move_robot_to_table')
+        
+        # client to move a robot to a part
+        self._move_robot_to_part_cli = self.create_client(
+            MoveRobotToTable,
+            '/commander/move_robot_to_part')
+        
+        # client to move a part to a AGV
+        self._move_part_to_agv_cli = self.create_client(
+            MoveRobotToTable,
+            '/commander/move_part_to_agv')
 
     def left_bin_callback(self, camera_msg: ALCImage):
         for part_pose in camera_msg.part_poses:
@@ -385,19 +399,37 @@ class OrderManager(Node):
                type - the type of part to be picked up
 
         output: result (boolean) - True for successful part pickup. False for failure
-
-        Future work:
-            This function will need to return a future callback that will provide the result of picking up the part
         '''
 
-        self.get_logger().info(
-            f'Picking up {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} '\
-                f'located at [{pose.position.x} {pose.position.y} {pose.position.z}] ' \
-                f'[{pose.orientation.x} {pose.orientation.y} {pose.orientation.z} {pose.orientation.w}]')
+        self.get_logger().info('👉 Moving robot to part...')
+            self._moved_robot_to_part = False
+        while not self._move_robot_to_part_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error('Service not available, waiting...')
+
+        request = MoveRobotToPart.Request()
+        request.color = color
+        request.type = part_type
+        request.part_pose_in_world = Pose
+        future = self._move_robot_to_part_cli.call_async(request)
+        future.add_done_callback(self._move_robot_to_part_done_cb)
 
         return True
 
-    def place_part(self, color: int, part_type: int, tray_id: int, quadrant: int):
+    def _move_robot_to_part_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_robot_to_part
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_robot_to_part = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def place_part(self, agv_number: int, quadrant: int):
         '''
         Function for placing a part
         input: color - the color of the part to be picked up
@@ -406,15 +438,34 @@ class OrderManager(Node):
                quadrent - the quadrant in the tray to place the part in
 
         output: result (boolean) - True for successful part pickup. False for failure
-
-        Future work:
-            This function will need to return a future callback that will provide the result of picking up the part
         '''
 
-        self.get_logger().info(
-            f"Placing {OrderManager._part_colors[color]} {OrderManager._part_types[part_type]} in quadrant {quadrant} in tray {tray_id}")
+        self.get_logger().info('👉 Move the robot and place part on AGV...')
+            self._moved_part_to_agv = False
+        while not self._move_part_to_agv_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().error('Service not available, waiting...')
+
+        request = MovePartToAGV.Request()
+        request.agv_number = agv_number
+        request.quadrant = quadrant
+        future = self._move_part_to_agv_cli.call_async(request)
+        future.add_done_callback(self._move_part_to_agv_done_cb)
 
         return True
+
+    def _move_part_to_agv_done_cb(self, future):
+        '''
+        Client callback for the service /commander/move_part_to_agv
+
+        Args:
+            future (Future): A future object
+        '''
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._moved_part_to_agv = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
 
     def _move_robot_to_tray(self, tray_id, tray_pose):
         '''
