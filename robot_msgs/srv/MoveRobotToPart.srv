@@ -8,9 +8,13 @@ uint8 PUMP=11
 uint8 SENSOR=12
 uint8 REGULATOR=13
 
+string BIN_LEFT='left_bin'
+string BIN_RIGHT='right_bin'
+
 uint8 color # RED, GREEN, BLUE, ORANGE, or PURPLE
 uint8 type # BATTERY, PUMP, SENSOR, or REGULATOR
 geometry_msgs/Pose part_pose_in_world
+string bin_location # BIN_LEFT, BIN_RIGHT
 ---
 bool success
 string message
