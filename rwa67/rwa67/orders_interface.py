@@ -27,12 +27,9 @@ from robot_msgs.srv import (
     MoveRobotToTable,
     MoveRobotToTray,
     MoveTrayToAGV,
-<<<<<<< HEAD
     MoveRobotToPart,
     MovePartToAGV,
-=======
     DiscardPart
->>>>>>> 02889d7e9f9d90ebebc8193a7b21f48919d7d12c
 )
 
 class GripperTypes(Enum):
