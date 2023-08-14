@@ -517,6 +517,11 @@ class OrderManager(Node):
             if not part_found:
                 self.get_logger().warn(
                     f"Part not found. Order {order.order_id} will be incomplete")
+                self._deactivate_gripper()
+                while (not self._deactivated_gripper):
+                    continue
+                self._deactivated_gripper = False
+                continue
             self.pick_part(
                 self._part_colors[item.part.color], self._part_types[item.part.type], item.pose, bin_location)
             while (not self._moved_robot_to_part):
@@ -528,16 +533,11 @@ class OrderManager(Node):
                 continue
             self._moved_part_to_agv = False
 
-            self._deactivate_gripper()
-            while(not self._deactivated_gripper):
-                continue
-            self._deactivated_gripper = False
-
             self._drop_part(target_agv, order_part.quadrant)
             while(not self._dropped_part):
                 continue
             self._dropped_part = False
-            
+
             self._deactivate_gripper()
             while (not self._deactivated_gripper):
                 continue
