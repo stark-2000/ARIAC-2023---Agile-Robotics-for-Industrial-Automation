@@ -36,6 +36,7 @@ from robot_msgs.srv import (
     DropPart
 )
 
+
 class GripperTypes(Enum):
     TRAY_GRIPPER = 'trays'
     PART_GRIPPER = 'parts'
@@ -44,6 +45,7 @@ class GripperTypes(Enum):
 class TrayStations(Enum):
     KTS_1 = 1
     KTS_2 = 2
+
 
 class Order:
     ''' 
@@ -67,20 +69,6 @@ class OrderManager(Node):
     Args:
         Node (Node): Class for creating an ROS node
     """
-
-    _part_colors = {
-        Part.RED: 'red',
-        Part.BLUE: 'blue',
-        Part.GREEN: 'green',
-        Part.ORANGE: 'orange',
-        Part.PURPLE: 'purple',
-    }
-    _part_types = {
-        Part.BATTERY: 'battery',
-        Part.PUMP: 'pump',
-        Part.REGULATOR: 'regulator',
-        Part.SENSOR: 'sensor',
-    }
 
     def __init__(self, node_name):
         super().__init__(node_name)
@@ -110,7 +98,6 @@ class OrderManager(Node):
         self._kts1_data_received = False
         self._kts2_data_received = False
         self._started_orders = False
-
 
         # Multiple flags to trigger the robot actions
 
@@ -151,19 +138,31 @@ class OrderManager(Node):
         self._table_path_failed = False
 
         # Dictionary for informing the faulty part quadrant
-        self._Faulty_Parts_Quadrants = {
-            KittingPart.QUADRANT1 : False,
-            KittingPart.QUADRANT2 : False,
-            KittingPart.QUADRANT3 : False,
-            KittingPart.QUADRANT4 : False
-            }
+        self._faulty_parts_quadrant = {
+            KittingPart.QUADRANT1: False,
+            KittingPart.QUADRANT2: False,
+            KittingPart.QUADRANT3: False,
+            KittingPart.QUADRANT4: False
+        }
 
+        self._part_colors = {
+            Part.RED: 0,
+            Part.BLUE: 1,
+            Part.GREEN: 2,
+            Part.ORANGE: 3,
+            Part.PURPLE: 4,
+        }
+        self._part_types = {
+            Part.BATTERY: 10,
+            Part.PUMP: 11,
+            Part.REGULATOR: 12,
+            Part.SENSOR: 13,
+        }
         # ----------- Callback Groups ----------
 
         timer_cb_group = MutuallyExclusiveCallbackGroup()
         subscriber_cb_group = MutuallyExclusiveCallbackGroup()
         self._fulfillment_callback_group = MutuallyExclusiveCallbackGroup()
-
 
         # ---------- Publishers ---------------
 
@@ -171,15 +170,14 @@ class OrderManager(Node):
         self._order_ship_publisher = self.create_publisher(
             UInt8, 'ship_order', 10)
 
-
         # ---------- Subscribers --------------
 
         # Subscriber to listen for orders
         self._order_subscriber = self.create_subscription(
             OrderMsg, 'ariac/orders', self.order_callback, 10,)
-        
+
         self._competition_state_subscriber = self.create_subscription(
-            CompetitionState, 'ariac/competition_state', self.comp_state_callback, 10, 
+            CompetitionState, 'ariac/competition_state', self.comp_state_callback, 10,
             callback_group=self._fulfillment_callback_group)
 
         # Subscribers to receive updated poses with world frame
@@ -194,7 +192,6 @@ class OrderManager(Node):
 
         self._kts2_tray_data_subscriber = self.create_subscription(
             ALCImage, '/kitting_tray2_camera_data', self.kts2_callback, qos_profile_sensor_data)
-
 
         # ---------- Clients -------------
 
@@ -212,17 +209,17 @@ class OrderManager(Node):
         self._move_robot_to_table_cli = self.create_client(
             MoveRobotToTable,
             '/commander/move_robot_to_table')
-        
+
         # client to move a robot to a part
         self._move_robot_to_part_cli = self.create_client(
             MoveRobotToPart,
             '/commander/move_robot_to_part')
-        
+
         # client to move a part to a AGV
         self._move_part_to_agv_cli = self.create_client(
             MovePartToAGV,
             '/commander/move_part_to_agv')
-        
+
         self._drop_part_cli = self.create_client(
             DropPart,
             '/commander/drop_part')
@@ -236,7 +233,7 @@ class OrderManager(Node):
         self._move_tray_to_agv_cli = self.create_client(
             MoveTrayToAGV,
             '/commander/move_tray_to_agv')
-        
+
         self._drop_tray_cli = self.create_client(
             DropTray,
             '/commander/drop_tray')
@@ -250,7 +247,7 @@ class OrderManager(Node):
         self._exit_tool_changer_cli = self.create_client(
             ExitToolChanger,
             '/commander/exit_tool_changer')
-        
+
         # client to discard a part
         self._discard_part_cli = self.create_client(
             DiscardPart,
@@ -273,8 +270,6 @@ class OrderManager(Node):
             PerformQualityCheck,
             '/ariac/perform_quality_check')
 
-            
-
         # ---------- Timer --------------
 
         # Timer to trigger the robot actions
@@ -283,8 +278,8 @@ class OrderManager(Node):
         #                                              self._robot_action_cb,
         #                                              callback_group=timer_cb_group)
 
-
     #  Callback functions for receiving camera images/world poses
+
     def left_bin_callback(self, camera_msg: ALCImage):
         for part_pose in camera_msg.part_poses:
             self._left_bin_inventory.append(part_pose)
@@ -320,7 +315,7 @@ class OrderManager(Node):
                         and self._kts2_data_received):
                     self.fulfill_order()
                 self.get_logger().info(
-                'waiting for camera info')   
+                    'waiting for camera info')
                 time.sleep(0.2)
 
     def order_callback(self, order_msg: OrderMsg):
@@ -424,83 +419,84 @@ class OrderManager(Node):
             self.get_logger().fatal(
                 f"Tray {target_tray} not found. Can not complete order {order.order_id}")
             return False
-        
+
         self._move_robot_to_table(station.value)
-        while(not self._moved_robot_to_table):
+        while (not self._moved_robot_to_table):
             continue
         self._moved_robot_to_table = False
-        
-        self._enter_tool_changer("kts"+ str(station.value), GripperTypes.TRAY_GRIPPER.value)
-        while(not self._entered_tool_changer):
+
+        self._enter_tool_changer(
+            "kts" + str(station.value), GripperTypes.TRAY_GRIPPER.value)
+        while (not self._entered_tool_changer):
             continue
         self._entered_tool_changer = False
 
         self._change_gripper(ChangeGripper.Request.TRAY_GRIPPER)
-        while(not self._changed_gripper):
+        while (not self._changed_gripper):
             continue
         self._changed_gripper = False
 
-        self._exit_tool_changer("kts"+ str(station.value), GripperTypes.TRAY_GRIPPER.value)
-        while(not self._exited_tool_changer):
+        self._exit_tool_changer(
+            "kts" + str(station.value), GripperTypes.TRAY_GRIPPER.value)
+        while (not self._exited_tool_changer):
             continue
         self._exited_tool_changer = False
 
         self._activate_gripper()
-        while(not self._activated_gripper):
+        while (not self._activated_gripper):
             continue
         self._activated_gripper = False
 
         self._move_robot_to_tray(target_tray, tray_pose)
-        while(not self._moved_robot_to_tray):
+        while (not self._moved_robot_to_tray):
             continue
         self._moved_robot_to_tray = False
 
         self._move_tray_to_agv(target_agv)
-        while(not self._moved_tray_to_agv):
+        while (not self._moved_tray_to_agv):
             continue
         self._moved_tray_to_agv = False
 
         self._deactivate_gripper()
-        while(not self._deactivated_gripper):
+        while (not self._deactivated_gripper):
             continue
         self._deactivated_gripper = False
 
         self._drop_tray(target_tray, target_agv)
-        while(not self._dropped_tray):
+        while (not self._dropped_tray):
             continue
         self._dropped_tray = False
 
-        self._move_robot_to_table(station.value)
-        #self._move_robot_to_table(TrayStations.KTS_1.value)
-        while(not self._moved_robot_to_table):
+        self._move_robot_to_table(TrayStations.KTS_2.value)
+        # self._move_robot_to_table(TrayStations.KTS_1.value)
+        while (not self._moved_robot_to_table):
             # if self._table_path_failed == True:
             #     self._move_robot_to_table(TrayStations.KTS_2.value)
             #     self._table_path_failed = False
             continue
         self._moved_robot_to_table = False
-        
+
         ######## ToDo MAKE ME NOT FIXED #######
-        self._enter_tool_changer("kts"+ str(station.value), GripperTypes.PART_GRIPPER.value)
-        while(not self._entered_tool_changer):
+        self._enter_tool_changer("kts2", GripperTypes.PART_GRIPPER.value)
+        while (not self._entered_tool_changer):
             continue
         self._entered_tool_changer = False
 
         self._change_gripper(ChangeGripper.Request.PART_GRIPPER)
-        while(not self._changed_gripper):
+        while (not self._changed_gripper):
             continue
         self._changed_gripper = False
 
-        self._exit_tool_changer("kts"+ str(station.value), GripperTypes.PART_GRIPPER.value)
-        while(not self._exited_tool_changer):
+        self._exit_tool_changer("kts2", GripperTypes.PART_GRIPPER.value)
+        while (not self._exited_tool_changer):
             continue
         self._exited_tool_changer = False
 
-        self._activate_gripper()
-        while(not self._activated_gripper):
-            continue
-
-        self._activated_gripper = False
         for order_part in order.parts:
+            self._activate_gripper()
+            while (not self._activated_gripper):
+                continue
+            self._activated_gripper = False
             part_found = False
             bin_location = None
             for item in self._left_bin_inventory:
@@ -521,22 +517,29 @@ class OrderManager(Node):
                     f"Part not found. Can not complete order {order.order_id}")
                 return False
             self.pick_part(
-                            item.part.color, item.part.type, item.pose, bin_location)
-            while(not self._moved_robot_to_part):
+                self._part_colors[item.part.color], self._part_types[item.part.type], item.pose, bin_location)
+            while (not self._moved_robot_to_part):
                 continue
             self._moved_robot_to_part = False
 
             self.place_part(target_agv, order_part.quadrant)
+            while (not self._moved_part_to_agv):
+                continue
+            self._moved_part_to_agv = False
 
             self._drop_part(target_agv, order_part.quadrant)
             while(not self._dropped_part):
                 continue
             self._dropped_part = False
 
+            self._deactivate_gripper()
+            while (not self._deactivated_gripper):
+                continue
+            self._deactivated_gripper = False
+
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
         self.complete_order()
-
 
     # def _robot_action_cb(self):
     #     '''
@@ -613,7 +616,6 @@ class OrderManager(Node):
     #         if self._deactivated_gripper:
     #             if not self._ending_demo:
     #                 self._move_robot_home(end_demo=True)
-
 
     # def _move_robot_home(self, end_demo=False):
     #     '''
@@ -746,7 +748,6 @@ class OrderManager(Node):
         else:
             self.get_logger().fatal(f'💀 {message}')
 
-  
     def perform_quality_check(self, order_id):
         '''
         performs quality check on the parts placed on AGV
@@ -754,12 +755,12 @@ class OrderManager(Node):
             order_id (str): Order ID
         '''
         self.get_logger().info('👉 Performing quality check...')
-        
+
         # Reset Quality check quadrants dictionary
-        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT1] = False
-        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT2] = False
-        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT3] = False
-        self._Faulty_Parts_Quadrants[KittingPart.QUADRANT4] = False
+        self._faulty_parts_quadrant[KittingPart.QUADRANT1] = False
+        self._faulty_parts_quadrant[KittingPart.QUADRANT2] = False
+        self._faulty_parts_quadrant[KittingPart.QUADRANT3] = False
+        self._faulty_parts_quadrant[KittingPart.QUADRANT4] = False
 
         self._parts_quality_check = False
 
@@ -794,16 +795,16 @@ class OrderManager(Node):
                 self.get_logger().fatal(f'💀 Quality check : Icnorrect Tray id.')
 
             if future.result().quadrant1.faulty_part:
-                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT1] = True
+                self._faulty_parts_quadrant[KittingPart.QUADRANT1] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q1')
             if future.result().quadrant2.faulty_part:
-                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT2] = True
+                self._faulty_parts_quadrant[KittingPart.QUADRANT2] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q2')
             if future.result().quadrant3.faulty_part:
-                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT3] = True
+                self._faulty_parts_quadrant[KittingPart.QUADRANT3] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q3')
             if future.result().quadrant4.faulty_part:
-                self._Faulty_Parts_Quadrants[KittingPart.QUADRANT4] = True
+                self._faulty_parts_quadrant[KittingPart.QUADRANT4] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q4')
 
     def pick_part(self, color: int, part_type: int, pose: Pose, bins_location):
@@ -928,7 +929,6 @@ class OrderManager(Node):
             self._deactivated_gripper = True
         else:
             self.get_logger().fatal('💀 Gripper not deactivated')
-
 
     def place_part(self, agv_number: int, quadrant: int):
         '''
@@ -1056,5 +1056,3 @@ class OrderManager(Node):
             self._dropped_part = True
         else:
             self.get_logger().fatal(f'💀 {message}')
-
-        
