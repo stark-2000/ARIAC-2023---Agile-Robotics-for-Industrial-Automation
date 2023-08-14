@@ -527,11 +527,16 @@ class OrderManager(Node):
                 continue
             self._moved_part_to_agv = False
 
+            self._deactivate_gripper()
+            while(not self._deactivated_gripper):
+                continue
+            self._deactivated_gripper = False
+
             self._drop_part(target_agv, order_part.quadrant)
             while(not self._dropped_part):
                 continue
             self._dropped_part = False
-
+            
             self._deactivate_gripper()
             while (not self._deactivated_gripper):
                 continue
