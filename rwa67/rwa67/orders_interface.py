@@ -528,10 +528,16 @@ class OrderManager(Node):
 
             self.place_part(target_agv, order_part.quadrant)
 
+            self._deactivate_gripper()
+            while(not self._deactivated_gripper):
+                continue
+            self._deactivated_gripper = False
+
             self._drop_part(target_agv, order_part.quadrant)
             while(not self._dropped_part):
                 continue
             self._dropped_part = False
+
 
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
