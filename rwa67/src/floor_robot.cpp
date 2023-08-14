@@ -248,7 +248,7 @@ bool FloorRobot::move_robot_to_tray_(int tray_id, const geometry_msgs::msg::Pose
         // It can happen that you need to build 2 kits and both use tray id 3.
         // You should find a way to name each tray differently
         std::string tray_name = "kit_tray_" + std::to_string(tray_id) + "_" + std::to_string(tray_counter_);
-        tray_counter_++;
+
         add_single_model_to_planning_scene_(tray_name, "kit_tray.stl", tray_pose);
 
         // Attach tray to robot in planning scene
@@ -361,6 +361,7 @@ bool FloorRobot::drop_tray_(int tray_id, int agv_number)
 {
     std::vector<geometry_msgs::msg::Pose> waypoints;
     std::string tray_name = "kit_tray_" + std::to_string(tray_id) + "_" + std::to_string(tray_counter_);
+    tray_counter_++;
 
     floor_robot_->detachObject(tray_name);
 
@@ -433,7 +434,7 @@ void FloorRobot::exit_tool_changer_srv_cb_(
 
     auto changing_station = req->changing_station;
     auto gripper_type = req->gripper_type;
-
+    
     if (exit_tool_changer_(changing_station, gripper_type))
     {
         res->success = true;
@@ -490,41 +491,6 @@ void FloorRobot::move_robot_to_part_srv_cb_(
 
 bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose, std::string bin_location)
 {
-    // bool found_part = false;
-    // std::string bin_side;
-
-    // // Check left bins
-    // for (auto part : left_bins_parts_)
-    // {
-    //     if (part.part.type == part_type && part.part.color == part_color)
-    //     {
-    //         // part_pose = Utils::multiply_poses(left_bins_camera_pose_, part.pose);
-    //         found_part = true;
-    //         bin_side = "left_bins";
-    //         break;
-    //     }
-    // }
-    // // Check right bins
-    // if (!found_part)
-    // {
-    //     for (auto part : right_bins_parts_)
-    //     {
-    //         if (part.part.type == part_type && part.part.color == part_color)
-    //         {
-    //             // part_pose = Utils::multiply_poses(right_bins_camera_pose_, part.pose);
-    //             found_part = true;
-    //             bin_side = "right_bins";
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // if (!found_part)
-    // {
-    //     RCLCPP_ERROR(get_logger(), "Unable to locate the part");
-    //     return false;
-    // }
-
     std::vector<geometry_msgs::msg::Pose> waypoints;
     floor_robot_->setJointValueTarget("linear_actuator_joint", rail_positions_[bin_location]);
     floor_robot_->setJointValueTarget("floor_shoulder_pan_joint", 0);
@@ -538,7 +504,7 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
     double part_rotation = Utils::get_yaw_from_pose_(part_pose);
 
     waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
-                                          part_pose.position.z + 0.5, set_robot_orientation_(part_rotation)));
+                                          part_pose.position.z + 0.2, set_robot_orientation_(part_rotation)));
     waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
                                           part_pose.position.z + part_heights_[part_type] + pick_offset_, set_robot_orientation_(part_rotation)));
 
@@ -560,6 +526,7 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
 
         // Attach tray to robot in planning scene
         floor_robot_->attachObject(part_name);
+        
         floor_robot_attached_part_.type = part_type;
         floor_robot_attached_part_.color = part_color;
 
@@ -659,13 +626,13 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
 
 
     waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
-                                          part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
+                                          part_drop_pose.position.z + 0.6, set_robot_orientation_(0)));
 
     waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
                                           part_drop_pose.position.z + part_heights_[floor_robot_attached_part_.type] + drop_height_,
                                           set_robot_orientation_(0)));
 
-    move_through_waypoints_(waypoints, 0.3, 0.3);
+    // move_through_waypoints_(waypoints, 0.3, 0.3);
 
     // MOVED TO NEW SERVICE - DROP_PART_SRV_()
     // std::string part_name = part_colors_[floor_robot_attached_part_.color] +
@@ -677,11 +644,11 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
     // waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
     //                                       part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
 
-    // if (!move_through_waypoints_(waypoints, 0.2, 0.1))
-    // {
-    //     RCLCPP_ERROR(get_logger(), "Unable to move part to AGV");
-    //     return false;
-    // }
+    if (!move_through_waypoints_(waypoints, 0.3, 0.3))
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move part to AGV");
+        return false;
+    }
 
     return true;
 }
@@ -694,7 +661,7 @@ void FloorRobot::drop_part_srv_cb_(
         auto agv_number = req->agv_number;
         auto quadrant = req->quadrant;
 
-        if (move_part_to_agv_(agv_number, quadrant))
+        if (drop_part_(agv_number, quadrant))
         {
             res->success = true;
             res->message = "Dropped the part";
