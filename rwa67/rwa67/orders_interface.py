@@ -209,12 +209,12 @@ class OrderManager(Node):
         
         # client to move a robot to a part
         self._move_robot_to_part_cli = self.create_client(
-            MoveRobotToTable,
+            MoveRobotToPart,
             '/commander/move_robot_to_part')
         
         # client to move a part to a AGV
         self._move_part_to_agv_cli = self.create_client(
-            MoveRobotToTable,
+            MovePartToAGV,
             '/commander/move_part_to_agv')
 
         # client to move a robot to a table
@@ -451,27 +451,27 @@ class OrderManager(Node):
             continue
         self._deactivated_gripper = False
 
-        #self._move_robot_to_table(station.value)
-        self._move_robot_to_table(TrayStations.KTS_1.value)
+        self._move_robot_to_table(station.value)
+        #self._move_robot_to_table(TrayStations.KTS_1.value)
         while(not self._moved_robot_to_table):
-            if self._table_path_failed == True:
-                self._move_robot_to_table(TrayStations.KTS_2.value)
-                self._table_path_failed = False
+            # if self._table_path_failed == True:
+            #     self._move_robot_to_table(TrayStations.KTS_2.value)
+            #     self._table_path_failed = False
             continue
         self._moved_robot_to_table = False
         
         ######## ToDo MAKE ME NOT FIXED #######
-        self._enter_tool_changer("kts2", GripperTypes.PART_GRIPPER.value)
+        self._enter_tool_changer("kts"+ str(station.value), GripperTypes.PART_GRIPPER.value)
         while(not self._entered_tool_changer):
             continue
         self._entered_tool_changer = False
 
-        self._change_gripper(ChangeGripper.Request.TRAY_GRIPPER)
+        self._change_gripper(ChangeGripper.Request.PART_GRIPPER)
         while(not self._changed_gripper):
             continue
         self._changed_gripper = False
 
-        self._exit_tool_changer("kts"+ str(station.value), GripperTypes.TRAY_GRIPPER.value)
+        self._exit_tool_changer("kts"+ str(station.value), GripperTypes.PART_GRIPPER.value)
         while(not self._exited_tool_changer):
             continue
         self._exited_tool_changer = False
@@ -501,9 +501,9 @@ class OrderManager(Node):
                 self.get_logger().fatal(
                     f"Part not found. Can not complete order {order.order_id}")
                 return False
-            self.pickup_part(
+            self.pick_part(
                             item.part.color, item.part.type, item.pose, bin_location)
-            while(not self.__moved_robot_to_part):
+            while(not self._moved_robot_to_part):
                 continue
             self._moved_robot_to_part = False
 
