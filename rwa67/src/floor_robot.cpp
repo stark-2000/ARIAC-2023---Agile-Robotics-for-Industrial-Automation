@@ -525,7 +525,7 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
 
         // Add part to planning scene
         std::string part_name = part_colors_[part_color] + "_" + part_types_[part_type] + "_" + std::to_string(part_counter_);
-        part_counter_++;
+   
         add_single_model_to_planning_scene_(part_name, part_types_[part_type] + ".stl", part_pose);
         RCLCPP_INFO_STREAM(get_logger(), part_name);
 
@@ -696,13 +696,14 @@ bool FloorRobot::drop_part_(int agv_number, int quadrant)
     RCLCPP_INFO_STREAM(get_logger(), part_colors_[floor_robot_attached_part_.color]);
     RCLCPP_INFO_STREAM(get_logger(), part_types_[floor_robot_attached_part_.type]);
     std::string part_name = part_colors_[floor_robot_attached_part_.color] +
-                            "_" + part_types_[floor_robot_attached_part_.type] + "_" + std::to_string(part_counter_ -1);
+                            "_" + part_types_[floor_robot_attached_part_.type] + "_" + std::to_string(part_counter_);
+    part_counter_++;
     RCLCPP_INFO_STREAM(get_logger(), part_colors_[floor_robot_attached_part_.color]);
     RCLCPP_INFO_STREAM(get_logger(), part_types_[floor_robot_attached_part_.type]);
     RCLCPP_INFO_STREAM(get_logger(), part_name);
                             
     floor_robot_->detachObject(part_name);
-
+    
 
     waypoints.clear();
     waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
