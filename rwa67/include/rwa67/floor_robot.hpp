@@ -55,6 +55,7 @@
 #include <robot_msgs/srv/drop_tray.hpp>
 #include <robot_msgs/srv/move_robot_to_part.hpp>
 #include <robot_msgs/srv/move_part_to_agv.hpp>
+#include <robot_msgs/srv/drop_part.hpp>
 #include <robot_msgs/srv/move_robot_to_bin.hpp>
 #include <robot_msgs/srv/discard_part.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -190,6 +191,8 @@ private:
 
     rclcpp::Service<robot_msgs::srv::MovePartToAGV>::SharedPtr move_part_to_agv_srv_;
 
+    rclcpp::Service<robot_msgs::srv::DropPart>::SharedPtr drop_part_srv_;
+
     rclcpp::Service<robot_msgs::srv::MoveRobotToBin>::SharedPtr move_robot_to_bin_srv_;
 
     int tray_counter_;
@@ -264,7 +267,11 @@ private:
     move_part_to_agv_srv_cb(
         robot_msgs::srv::MovePartToAGV::Request::SharedPtr req_, robot_msgs::srv::MovePartToAGV::Response::SharedPtr res_);
 
-  /**
+    void
+    drop_part_srv_cb_(
+        robot_msgs::srv::DropPart::Request::SharedPtr req_, robot_msgs::srv::DropPart::Response::SharedPtr res_);
+
+    /**
      * @brief Callback function for the service /commander/move_robot_to_bin
      *
      * @param req_ Shared pointer to robot_msgs::srv::MoveRobotToBin::Request
@@ -344,6 +351,8 @@ private:
     bool move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose, std::string bin_location);
 
     bool move_part_to_agv_(int agv_number, int quadrant);
+
+    bool drop_part_(int agv_number, int quadrant);
     
     /**
      * @brief Move the robot to left or right bins on the linear rail

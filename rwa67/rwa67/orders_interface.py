@@ -31,7 +31,9 @@ from robot_msgs.srv import (
     MoveTrayToAGV,
     MoveRobotToPart,
     MovePartToAGV,
-    DiscardPart
+    DiscardPart,
+    DropTray,
+    DropPart
 )
 
 class GripperTypes(Enum):
@@ -123,6 +125,8 @@ class OrderManager(Node):
         self._moving_robot_to_tray = False
         self._moving_tray_to_agv = False
         self._ending_demo = False
+        self._dropping_tray = False
+        self._dropping_part = False
 
         # The following flags are used to trigger the next action
         self._kit_completed = False
@@ -140,6 +144,8 @@ class OrderManager(Node):
         self._moved_robot_to_part = False
         self._moved_part_to_agv = False
         self._parts_quality_check = False
+        self._dropped_tray = False
+        self._dropped_part = False
 
         # flags for errors
         self._table_path_failed = False
@@ -216,6 +222,10 @@ class OrderManager(Node):
         self._move_part_to_agv_cli = self.create_client(
             MovePartToAGV,
             '/commander/move_part_to_agv')
+        
+        self._drop_part_cli = self.create_client(
+            DropPart,
+            '/commander/drop_part')
 
         # client to move a robot to a table
         self._move_robot_to_tray_cli = self.create_client(
@@ -226,6 +236,10 @@ class OrderManager(Node):
         self._move_tray_to_agv_cli = self.create_client(
             MoveTrayToAGV,
             '/commander/move_tray_to_agv')
+        
+        self._drop_tray_cli = self.create_client(
+            DropTray,
+            '/commander/drop_tray')
 
         # client to move the end effector inside a tool changer
         self._enter_tool_changer_cli = self.create_client(
@@ -451,6 +465,11 @@ class OrderManager(Node):
             continue
         self._deactivated_gripper = False
 
+        self._drop_tray(target_tray, target_agv)
+        while(not self._dropped_tray):
+            continue
+        self._dropped_tray = False
+
         self._move_robot_to_table(station.value)
         #self._move_robot_to_table(TrayStations.KTS_1.value)
         while(not self._moved_robot_to_table):
@@ -508,6 +527,11 @@ class OrderManager(Node):
             self._moved_robot_to_part = False
 
             self.place_part(target_agv, order_part.quadrant)
+
+            self._drop_part(target_agv, order_part.quadrant)
+            while(not self._dropped_part):
+                continue
+            self._dropped_part = False
 
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
@@ -992,3 +1016,45 @@ class OrderManager(Node):
             self._moved_tray_to_agv = True
         else:
             self.get_logger().fatal(f'💀 {message}')
+
+    def _drop_tray(self, tray_id, agv_number):
+        self._dropping_tray = True
+
+        while not self._drop_tray_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = DropTray.Request()
+        request.tray_id = tray_id
+        request.agv_number = agv_number
+        future = self._drop_tray_cli.call_async(request)
+        future.add_done_callback(self._drop_tray_done)
+
+    def _drop_tray_done(self, future):
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._dropped_tray = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _drop_part(self, agv_number, quadrant):
+        self._dropping_part = True
+
+        while not self._drop_part_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = DropPart.Request()
+        request.agv_number = agv_number
+        request.quadrant = quadrant
+        future = self._drop_part_cli.call_async(request)
+        future.add_done_callback(self._drop_part_done)
+
+    def _drop_part_done(self, future):
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._dropped_part = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+        

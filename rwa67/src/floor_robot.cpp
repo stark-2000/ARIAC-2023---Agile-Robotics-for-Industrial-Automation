@@ -101,6 +101,12 @@ FloorRobot::FloorRobot()
         std::bind(
             &FloorRobot::move_part_to_agv_srv_cb, this,
             std::placeholders::_1, std::placeholders::_2));
+
+    drop_part_srv_ = create_service<robot_msgs::srv::DropPart>(
+        "/commander/drop_part",
+        std::bind(
+            &FloorRobot::drop_part_srv_cb_, this,
+            std::placeholders::_1, std::placeholders::_2));
     
     move_robot_to_bin_srv_ = create_service<robot_msgs::srv::MoveRobotToBin>(
         "/commander/move_robot_to_bin",
@@ -312,6 +318,7 @@ bool FloorRobot::move_tray_to_agv(int agv_number)
         return false;
     }
 
+    // MOVED TO NEW SERVICE - DROP_TRAY_()
     // floor_robot_->detachObject(tray_name);
 
     // // Move up slightly
@@ -660,11 +667,61 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
 
     move_through_waypoints_(waypoints, 0.3, 0.3);
 
+    // MOVED TO NEW SERVICE - DROP_PART_SRV_()
+    // std::string part_name = part_colors_[floor_robot_attached_part_.color] +
+    //                         "_" + part_types_[floor_robot_attached_part_.type];
+                            
+    // floor_robot_->detachObject(part_name);
+
+    // waypoints.clear();
+    // waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
+    //                                       part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
+
+    // if (!move_through_waypoints_(waypoints, 0.2, 0.1))
+    // {
+    //     RCLCPP_ERROR(get_logger(), "Unable to move part to AGV");
+    //     return false;
+    // }
+
+    return true;
+}
+
+//=============================================//
+void FloorRobot::drop_part_srv_cb_(
+    robot_msgs::srv::DropPart::Request::SharedPtr req, 
+    robot_msgs::srv::DropPart::Response::SharedPtr res)
+    {
+        auto agv_number = req->agv_number;
+        auto quadrant = req->quadrant;
+
+        if (move_part_to_agv_(agv_number, quadrant))
+        {
+            res->success = true;
+            res->message = "Dropped the part";
+        }
+        else
+        {
+            res->success = false;
+            res->message = "Unable to drop the part";
+        }
+    }
+
+bool FloorRobot::drop_part_(int agv_number, int quadrant)
+{
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+
+    auto agv_tray_pose = get_pose_in_world_frame_("agv" + std::to_string(agv_number) + "_tray");
+
+    auto part_drop_offset = Utils::build_pose(quad_offsets_[quadrant].first, quad_offsets_[quadrant].second, 0.0,
+                                              geometry_msgs::msg::Quaternion());
+
+    auto part_drop_pose = Utils::multiply_poses(agv_tray_pose, part_drop_offset);
 
     std::string part_name = part_colors_[floor_robot_attached_part_.color] +
                             "_" + part_types_[floor_robot_attached_part_.type];
                             
     floor_robot_->detachObject(part_name);
+
 
     waypoints.clear();
     waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
@@ -678,8 +735,6 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
 
     return true;
 }
-
-//=============================================//
 
 //=============================================//
 void FloorRobot::discard_part_srv_cb_(
