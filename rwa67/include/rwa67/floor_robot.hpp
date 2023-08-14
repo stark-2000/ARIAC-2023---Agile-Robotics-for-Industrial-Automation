@@ -21,6 +21,8 @@
  */
 
 #pragma once
+#include <iostream>
+#include <map>
 
 // RCLCPP
 #include <rclcpp/qos.hpp>
@@ -196,6 +198,7 @@ private:
     rclcpp::Service<robot_msgs::srv::MoveRobotToBin>::SharedPtr move_robot_to_bin_srv_;
 
     int tray_counter_;
+    int part_counter_;
 
     /**
      * @brief Callback function for the service /commander/move_robot_home

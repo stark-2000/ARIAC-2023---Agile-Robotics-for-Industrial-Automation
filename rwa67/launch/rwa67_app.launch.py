@@ -59,7 +59,7 @@ def generate_launch_description():
         launch.launch_description_sources.PythonLaunchDescriptionSource(
                 pkg_dir + '/launch/ariac.launch.py'), launch_arguments={'competitor_pkg': 'rwa67', 'sensor_conﬁg': 'sensors', 
                                                                         'trial_name': 'rwa67_summer2023'}.items())
-
+    ld.add_action(moveit)
     ld.add_action(included_launch)
     ld.add_action(service_client_exe_node)
     ld.add_action(locate_parts_trays_exe_node)
@@ -68,7 +68,6 @@ def generate_launch_description():
     ld.add_action(submit_order_node)
     ld.add_action(end_competition_node)
     ld.add_action(robot_commander_exe_node)
-    ld.add_action(moveit)
 
     
     return ld
