@@ -406,12 +406,14 @@ class OrderManager(Node):
         station = None
         for tray in self._kts1_inventory:
             if tray.id == target_tray:
+                self._kts1_inventory.remove(tray)
                 tray_pose = tray.pose
                 station = TrayStations.KTS_1
                 break
         if tray_pose == None:
             for tray in self._kts2_inventory:
                 if tray.id == target_tray:
+                    self._kts2_inventory.remove(tray)
                     tray_pose = tray.pose
                     station = TrayStations.KTS_2
                     break
@@ -513,9 +515,8 @@ class OrderManager(Node):
                         self._right_bin_inventory.remove(item)
                         break
             if not part_found:
-                self.get_logger().fatal(
-                    f"Part not found. Can not complete order {order.order_id}")
-                return False
+                self.get_logger().warn(
+                    f"Part not found. Order {order.order_id} will be incomplete")
             self.pick_part(
                 self._part_colors[item.part.color], self._part_types[item.part.type], item.pose, bin_location)
             while (not self._moved_robot_to_part):
