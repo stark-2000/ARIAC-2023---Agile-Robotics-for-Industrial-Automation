@@ -133,6 +133,7 @@ class OrderManager(Node):
         self._parts_quality_check = False
         self._dropped_tray = False
         self._dropped_part = False
+        self._discarded_part = False
 
         # flags for errors
         self._table_path_failed = False
@@ -314,8 +315,6 @@ class OrderManager(Node):
                     and self._kts1_data_received
                         and self._kts2_data_received):
                     self.fulfill_order()
-                self.get_logger().info(
-                    'waiting for camera info')
                 time.sleep(0.2)
 
     def order_callback(self, order_msg: OrderMsg):
@@ -468,18 +467,18 @@ class OrderManager(Node):
         while (not self._dropped_tray):
             continue
         self._dropped_tray = False
+        if (True in (item.part == order.parts[0].part for item in self._left_bin_inventory)):
+            closest_table = TrayStations.KTS_1.value
+        else:
+            closest_table = TrayStations.KTS_2.value
 
-        self._move_robot_to_table(TrayStations.KTS_2.value)
-        # self._move_robot_to_table(TrayStations.KTS_1.value)
+        self._move_robot_to_table(closest_table)
         while (not self._moved_robot_to_table):
-            # if self._table_path_failed == True:
-            #     self._move_robot_to_table(TrayStations.KTS_2.value)
-            #     self._table_path_failed = False
             continue
         self._moved_robot_to_table = False
 
-        ######## ToDo MAKE ME NOT FIXED #######
-        self._enter_tool_changer("kts2", GripperTypes.PART_GRIPPER.value)
+        self._enter_tool_changer(
+            "kts" + str(closest_table), GripperTypes.PART_GRIPPER.value)
         while (not self._entered_tool_changer):
             continue
         self._entered_tool_changer = False
@@ -489,12 +488,15 @@ class OrderManager(Node):
             continue
         self._changed_gripper = False
 
-        self._exit_tool_changer("kts2", GripperTypes.PART_GRIPPER.value)
+        self._exit_tool_changer(
+            "kts" + str(closest_table), GripperTypes.PART_GRIPPER.value)
         while (not self._exited_tool_changer):
             continue
         self._exited_tool_changer = False
 
-        for order_part in order.parts:
+        order_parts = deque(order.parts)
+        while (len(order_parts) > 0):
+            order_part = order_parts.popleft()
             self._activate_gripper()
             while (not self._activated_gripper):
                 continue
@@ -533,10 +535,39 @@ class OrderManager(Node):
                 continue
             self._moved_part_to_agv = False
 
+            self.perform_quality_check(order.order_id)
+            while (not self._parts_quality_check):
+                continue
+            self._parts_quality_check = False
+
+            if self._faulty_parts_quadrant[order_part.quadrant]:
+                self.get_logger().warn(
+                    f"Faulty Part found.")
+                self._discard_part(target_agv, order_part.quadrant)
+                while (not self._discarded_part):
+                    continue
+                self._discarded_part = False
+                self._deactivate_gripper()
+                while (not self._deactivated_gripper):
+                    continue
+                self._deactivated_gripper = False
+                order_parts.appendleft(order_part)
+                self.get_logger().warn(
+                    f"put part back in list")
+                continue
+            else:
+                self.get_logger().warn(
+                    f"No Faulty Part found.")
+
             self._deactivate_gripper()
             while (not self._deactivated_gripper):
                 continue
             self._deactivated_gripper = False
+
+            self._drop_part(target_agv, order_part.quadrant)
+            while (not self._dropped_part):
+                continue
+            self._dropped_part = False
 
             self._drop_part(target_agv, order_part.quadrant)
             while(not self._dropped_part):
@@ -546,114 +577,6 @@ class OrderManager(Node):
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
         self.complete_order()
-
-    # def _robot_action_cb(self):
-    #     '''
-    #     Timer callback function to trigger the robot actions
-    #     '''
-
-    #     # self.get_logger().info('🚀 Robot action timer callback called')
-    #     # exit the callback if the kit is completed
-    #     if self._kit_completed:
-    #         return
-
-    #     # move robot home
-    #     if self._competition_started:
-    #         if not self._robot_moving_to_home:
-    #             self._move_robot_home()
-
-    #     # move to table
-    #     if self._robot_moved_to_home:
-    #         if not self._moving_robot_to_table:
-    #             # using KTS1 constant from MoveRobotToTable.srv
-    #             self._move_robot_to_table(MoveRobotToTable.Request.KTS1)
-
-    #     # enter tool changer
-    #     if self._moved_robot_to_table:
-    #         if not self._entering_tool_changer:
-    #             self._enter_tool_changer('kts1', 'trays')
-
-    #     # change gripper
-    #     if self._entered_tool_changer:
-    #         if not self._changing_gripper:
-    #             # using PART_GRIPPER constant from ChangeGripper.srv
-    #             self._change_gripper(ChangeGripper.Request.TRAY_GRIPPER)
-
-    #     # exit tool changer
-    #     if self._changed_gripper:
-    #         if not self._exiting_tool_changer:
-    #             self._exit_tool_changer('kts1', 'trays')
-
-    #     # activate gripper
-    #     if self._exited_tool_changer:
-    #         if not self._activating_gripper:
-    #             self._activate_gripper()
-
-    #     # move to tray
-    #     if self._activated_gripper:
-    #         if not self._moving_robot_to_tray:
-    #             # TODO: get the tray id and pose from the vision system
-    #             tray_id = MoveRobotToTray.Request.TRAY_ID3
-    #             tray_pose = Pose()
-    #             tray_pose.position.x = -0.870000
-    #             tray_pose.position.y = -5.840000
-    #             tray_pose.position.z = 0.734990
-    #             tray_pose.orientation.x = 0.0
-    #             tray_pose.orientation.y = 0.0
-    #             tray_pose.orientation.z = 1.0
-    #             tray_pose.orientation.w = 0.0
-    #             self._move_robot_to_tray(tray_id, tray_pose)
-
-    #     # move tray to agv
-    #     # TODO: Check whether the tray is picked up by using
-    #     # a subscriber to /ariac/floor_robot_gripper_state
-    #     if self._moved_robot_to_tray:
-    #         if not self._moving_tray_to_agv:
-    #             self._move_tray_to_agv(MoveTrayToAGV.Request.AGV3)
-
-    #     # deactivate gripper
-    #     # TODO: Check whether the tray is not attached to the gripper
-    #     if self._moved_tray_to_agv:
-    #         if not self._deactivating_gripper:
-    #             self._deactivate_gripper()
-
-    #     # move robot home
-    #     if self._moved_tray_to_agv:
-    #         if self._deactivated_gripper:
-    #             if not self._ending_demo:
-    #                 self._move_robot_home(end_demo=True)
-
-    # def _move_robot_home(self, end_demo=False):
-    #     '''
-    #     Move the floor robot to its home position
-    #     '''
-
-    #     self.get_logger().info('👉 Moving robot home...')
-    #     if end_demo:
-    #         self._ending_demo = True
-    #     else:
-    #         self._robot_moving_to_home = True
-
-    #     while not self._move_robot_home_cli.wait_for_service(timeout_sec=1.0):
-    #         self.get_logger().info('Service not available, waiting...')
-
-    #     request = Trigger.Request()
-    #     future = self._move_robot_home_cli.call_async(request)
-    #     future.add_done_callback(self._move_robot_home_done_cb)
-
-    # def _move_robot_home_done_cb(self, future):
-    #     '''
-    #     Client callback for the service /competitor/floor_robot/go_home
-
-    #     Args:
-    #         future (Future): A future object
-    #     '''
-    #     message = future.result().message
-    #     if future.result().success:
-    #         self.get_logger().info(f'✅ {message}')
-    #         self._robot_moved_to_home = True
-    #     else:
-    #         self.get_logger().fatal(f'💀 {message}')
 
     def _move_robot_to_table(self, table_id):
         '''
@@ -789,8 +712,6 @@ class OrderManager(Node):
         valid_id = future.result().valid_id
         incorrect_tray = future.result().incorrect_tray
 
-        self._parts_quality_check = True
-
         if quality_status:
             self.get_logger().info('✅ Quality Check Passed.')
         else:
@@ -812,6 +733,8 @@ class OrderManager(Node):
             if future.result().quadrant4.faulty_part:
                 self._faulty_parts_quadrant[KittingPart.QUADRANT4] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q4')
+
+        self._parts_quality_check = True
 
     def pick_part(self, color: int, part_type: int, pose: Pose, bins_location):
         '''
@@ -1060,5 +983,24 @@ class OrderManager(Node):
         if future.result().success:
             self.get_logger().info(f'✅ {message}')
             self._dropped_part = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _discard_part(self, agv_number, quadrant):
+
+        while not self._discard_part_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = DiscardPart.Request()
+        request.agv_number = agv_number
+        request.quadrant = quadrant
+        future = self._discard_part_cli.call_async(request)
+        future.add_done_callback(self._discard_part_done)
+
+    def _discard_part_done(self, future):
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._discarded_part = True
         else:
             self.get_logger().fatal(f'💀 {message}')
