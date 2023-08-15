@@ -11,6 +11,8 @@ Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
     ```
     ```
     colcon build --packages-select robot_msgs
+    ```
+    ```
     colcon build --packages-select rwa67
     ```
     ```
