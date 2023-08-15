@@ -1,0 +1,64 @@
+# Trial Name: rwa67_summer2023_SB_test1.yaml
+# ARIAC2023
+
+time_limit: -1 # options: -1 (no time limit) or number of seconds
+gazebo_state_logging: false # options: true or false
+
+
+kitting_trays: # Which kitting trays will be spawn
+  tray_ids: [5, 8, 8] 
+  slots: [6, 3, 4]
+
+parts:
+  bins: # bin params - 8 total bins each bin has nine total slots (1-9)
+    bin3:
+      - type: 'battery'
+        color: 'green'
+        slots: [1]
+    bin4:
+      - type: 'battery'
+        color: 'green'
+        slots: [2]
+    bin7:
+      - type: 'battery'
+        color: 'green'
+        slots: [2]
+    bin8:
+      - type: 'battery'
+        color: 'green'
+        slots: [2, 9]
+    
+orders:
+  - id: 'KITTING1'
+    type: 'kitting'
+    announcement:
+      time_condition: 0
+    priority: false
+    kitting_task:
+      agv_number: 2
+      tray_id: 5
+      destination: 'warehouse'
+      products:
+        - type: 'battery'
+          color: 'green'
+          quadrant: 1
+        - type: 'battery'
+          color: 'green'
+          quadrant: 2
+        - type: 'battery'
+          color: 'green'
+          quadrant: 3
+        - type: 'battery'
+          color: 'green'
+          quadrant: 4
+
+challenges:
+  - faulty_part:
+      order_id: 'KITTING1'
+      quadrant1: true
+  - faulty_part:
+      order_id: 'KITTING1'
+      quadrant2: true
+  - faulty_part:
+      order_id: 'KITTING1'
+      quadrant3: true

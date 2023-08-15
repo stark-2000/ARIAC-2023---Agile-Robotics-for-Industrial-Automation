@@ -423,6 +423,10 @@ class OrderManager(Node):
 
         self._move_robot_to_table(station.value)
         while (not self._moved_robot_to_table):
+            if(self._failure):
+                self.get_logger().warn(" ---> Moving robot to table failed. Trying agian...")
+                self._move_robot_to_table(station.value)
+                self._failure = False
             continue
         self._moved_robot_to_table = False
 
@@ -456,7 +460,7 @@ class OrderManager(Node):
         self._move_tray_to_agv(target_agv)
         while (not self._moved_tray_to_agv):
             if(self._failure):
-                self.get_logger().info("Moving tray to ATV failed. Trying agian...")
+                self.get_logger().warn(" ---> Moving tray to ATV failed. Trying agian...")
                 self._move_tray_to_agv(target_agv)
                 self._failure = False
             continue
@@ -549,6 +553,10 @@ class OrderManager(Node):
                     f"Faulty Part found.")
                 self._discard_part(target_agv, order_part.quadrant)
                 while (not self._discarded_part):
+                    if(self._failure):
+                         self.get_logger().warn(" ---> Moving tray to ATV failed. Trying agian...")
+                         self._discard_part(target_agv, order_part.quadrant)
+                         self._failure = False
                     continue
                 self._discarded_part = False
                 self._deactivate_gripper()
@@ -570,13 +578,13 @@ class OrderManager(Node):
 
             self._drop_part(target_agv, order_part.quadrant)
             while (not self._dropped_part):
+                if(self._failure):
+                    self.get_logger().warn(" ---> Dropping part failed. Trying agian...")
+                    self._drop_part(target_agv, order_part.quadrant)
+                    self._failure = False
                 continue
             self._dropped_part = False
 
-            self._drop_part(target_agv, order_part.quadrant)
-            while(not self._dropped_part):
-                continue
-            self._dropped_part = False
 
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
@@ -612,8 +620,8 @@ class OrderManager(Node):
             self.get_logger().info(f'✅ {message}')
             self._moved_robot_to_table = True
         else:
-            self._table_path_failed = True
             self.get_logger().fatal(f'💀 {message}')
+            self._failure = True
 
     def _enter_tool_changer(self, station, gripper_type):
         '''
@@ -968,7 +976,7 @@ class OrderManager(Node):
 
     def _drop_part(self, agv_number, quadrant):
         self._dropping_part = True
-
+    
         while not self._drop_part_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')
 
@@ -985,9 +993,10 @@ class OrderManager(Node):
             self._dropped_part = True
         else:
             self.get_logger().fatal(f'💀 {message}')
+            self._failure = True
 
     def _discard_part(self, agv_number, quadrant):
-
+        self.get_logger().info('👉 Discarding part...')
         while not self._discard_part_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting...')
 
@@ -1004,3 +1013,4 @@ class OrderManager(Node):
             self._discarded_part = True
         else:
             self.get_logger().fatal(f'💀 {message}')
+            self._failure = True
