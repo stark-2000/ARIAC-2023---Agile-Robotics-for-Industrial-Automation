@@ -136,7 +136,7 @@ class OrderManager(Node):
         self._discarded_part = False
 
         # flags for errors
-        self._table_path_failed = False
+        self._failure = False
 
         # Dictionary for informing the faulty part quadrant
         self._faulty_parts_quadrant = {
@@ -455,6 +455,10 @@ class OrderManager(Node):
 
         self._move_tray_to_agv(target_agv)
         while (not self._moved_tray_to_agv):
+            if(self._failure):
+                self.get_logger().info("Moving tray to ATV failed. Trying agian...")
+                self._move_tray_to_agv(target_agv)
+                self._failure = False
             continue
         self._moved_tray_to_agv = False
 
@@ -945,6 +949,7 @@ class OrderManager(Node):
             self._moved_tray_to_agv = True
         else:
             self.get_logger().fatal(f'💀 {message}')
+            self._failure = True
 
     def _drop_tray(self, tray_id, agv_number):
         self._dropping_tray = True
