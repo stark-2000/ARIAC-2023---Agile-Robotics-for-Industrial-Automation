@@ -3,6 +3,7 @@ Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
 
 ## Instructions to run RWA67
 - This project has one launch file which launches the gazebo launch file and all other c++ and python nodes
+- robot_msgs package has to be built first before building the package rwa67.
 
 - CLI commands:
     ```
