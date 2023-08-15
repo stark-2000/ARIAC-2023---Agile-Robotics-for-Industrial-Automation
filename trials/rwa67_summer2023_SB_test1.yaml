@@ -62,7 +62,7 @@ orders:
     type: 'kitting'
     announcement:
       part_place_condition:
-        agv: 1
+        agv: 2
         type: 'sensor'
         color: 'red'
     priority: false
