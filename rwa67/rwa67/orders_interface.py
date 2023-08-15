@@ -543,6 +543,21 @@ class OrderManager(Node):
                 continue
             self._deactivated_gripper = False
 
+
+            self.perform_quality_check(order.order_id)
+            while (not self._parts_quality_check):
+                self.get_logger().warn(
+                    f"Looping...")
+                continue
+            self._parts_quality_check = False
+            
+            if self._faulty_parts_quadrant[order_part.quadrant]:
+                self.get_logger().warn(
+                    f"Faulty Part found.")
+            else:
+                self.get_logger().warn(
+                    f"No Faulty Part found.")
+
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
         self.complete_order()
@@ -789,7 +804,6 @@ class OrderManager(Node):
         valid_id = future.result().valid_id
         incorrect_tray = future.result().incorrect_tray
 
-        self._parts_quality_check = True
 
         if quality_status:
             self.get_logger().info('✅ Quality Check Passed.')
@@ -812,6 +826,9 @@ class OrderManager(Node):
             if future.result().quadrant4.faulty_part:
                 self._faulty_parts_quadrant[KittingPart.QUADRANT4] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q4')
+        
+
+        self._parts_quality_check = True
 
     def pick_part(self, color: int, part_type: int, pose: Pose, bins_location):
         '''
