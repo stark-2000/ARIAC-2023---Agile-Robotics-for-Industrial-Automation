@@ -504,7 +504,7 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
     }
 
     double part_rotation = Utils::get_yaw_from_pose_(part_pose);
-
+    
     waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
                                           part_pose.position.z + 0.2, set_robot_orientation_(part_rotation)));
     waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
@@ -528,6 +528,8 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
    
         add_single_model_to_planning_scene_(part_name, part_types_[part_type] + ".stl", part_pose);
         RCLCPP_INFO_STREAM(get_logger(), part_name);
+        RCLCPP_INFO_STREAM(get_logger(), part_heights_[part_type]);
+
 
         // Attach tray to robot in planning scene
         floor_robot_->attachObject(part_name);
@@ -618,7 +620,7 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
 
     if (!move_to_target_())
     {
-        RCLCPP_ERROR(get_logger(), "Unable to move to part");
+        RCLCPP_ERROR(get_logger(), "Unable to move to agv");
         return false;
     }
 
@@ -681,7 +683,7 @@ void FloorRobot::drop_part_srv_cb_(
 
 bool FloorRobot::drop_part_(int agv_number, int quadrant)
 {
-    RCLCPP_INFO(get_logger(), "************************************");
+    
     std::vector<geometry_msgs::msg::Pose> waypoints;
 
     auto agv_tray_pose = get_pose_in_world_frame_("agv" + std::to_string(agv_number) + "_tray");
@@ -691,16 +693,9 @@ bool FloorRobot::drop_part_(int agv_number, int quadrant)
 
     auto part_drop_pose = Utils::multiply_poses(agv_tray_pose, part_drop_offset);
     
-    RCLCPP_INFO_STREAM(get_logger(), floor_robot_attached_part_.color);
-    RCLCPP_INFO_STREAM(get_logger(), floor_robot_attached_part_.type);
-    RCLCPP_INFO_STREAM(get_logger(), part_colors_[floor_robot_attached_part_.color]);
-    RCLCPP_INFO_STREAM(get_logger(), part_types_[floor_robot_attached_part_.type]);
     std::string part_name = part_colors_[floor_robot_attached_part_.color] +
                             "_" + part_types_[floor_robot_attached_part_.type] + "_" + std::to_string(part_counter_);
     part_counter_++;
-    RCLCPP_INFO_STREAM(get_logger(), part_colors_[floor_robot_attached_part_.color]);
-    RCLCPP_INFO_STREAM(get_logger(), part_types_[floor_robot_attached_part_.type]);
-    RCLCPP_INFO_STREAM(get_logger(), part_name);
                             
     floor_robot_->detachObject(part_name);
     
@@ -1020,7 +1015,7 @@ geometry_msgs::msg::Pose FloorRobot::get_pose_in_world_frame_(std::string frame_
 void FloorRobot::add_single_model_to_planning_scene_(
     std::string name, std::string mesh_file, geometry_msgs::msg::Pose model_pose)
 {
-    RCLCPP_INFO_STREAM(get_logger(), "**********ADDING MODEL*******");
+    
     moveit_msgs::msg::CollisionObject collision;
 
     collision.id = name;
@@ -1041,14 +1036,14 @@ void FloorRobot::add_single_model_to_planning_scene_(
 
     collision.meshes.push_back(mesh);
     collision.mesh_poses.push_back(model_pose);
-    RCLCPP_INFO_STREAM(get_logger(), "**********MIDDLE OF ADDING*******");
+    
     collision.operation = collision.ADD;
 
     std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
     collision_objects.push_back(collision);
 
-    planning_scene_.addCollisionObjects(collision_objects);
-    RCLCPP_INFO_STREAM(get_logger(), "**********ADDED MODEL*******");
+    planning_scene_.applyCollisionObjects(collision_objects);
+    
 }
 
 //=============================================//

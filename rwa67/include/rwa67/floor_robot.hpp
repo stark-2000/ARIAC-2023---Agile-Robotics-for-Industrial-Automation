@@ -708,8 +708,8 @@ private:
         {"agv2", -1.2},
         {"agv3", 1.2},
         {"agv4", 4.5},
-        {"left_bins", 3},
-        {"right_bins", -3}};
+        {"left_bin", 3},
+        {"right_bin", -3}};
     //! Joint value targets for kit tray station 1
     std::map<std::string, double> floor_kts1_js_ = {
         {"linear_actuator_joint", 4.0},
