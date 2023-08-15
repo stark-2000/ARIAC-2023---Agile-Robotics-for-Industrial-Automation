@@ -744,6 +744,8 @@ bool FloorRobot::discard_part_(int agv_number, int quadrant)
    
     std::string part_name = part_colors_[floor_robot_attached_part_.color] +
                             "_" + part_types_[floor_robot_attached_part_.type] + "_" + std::to_string(part_counter_);
+    std::vector<std::string> object_id;
+    object_id.push_back(part_name);
     
     floor_robot_->setJointValueTarget(discard_bin_js_);
     if (!move_to_target_())
@@ -752,7 +754,7 @@ bool FloorRobot::discard_part_(int agv_number, int quadrant)
         return false;
     }
     floor_robot_->detachObject(part_name);
-
+    planning_scene_.removeCollisionObjects(object_id);
     floor_robot_->setNamedTarget("home");
     if (!move_to_target_())
     {
@@ -1018,6 +1020,7 @@ void FloorRobot::add_single_model_to_planning_scene_(
     planning_scene_.applyCollisionObjects(collision_objects);
     
 }
+
 
 //=============================================//
 void FloorRobot::add_models_to_planning_scene_()
