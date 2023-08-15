@@ -80,6 +80,7 @@
 // #include <competitor_msgs/msg/robots_status.hpp>
 
 #include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 
 /**
  * @brief Class for the floor robot
@@ -734,8 +735,8 @@ private:
     std::map<std::string, double> discard_bin_js_ = {
         {"linear_actuator_joint", 0.0},
         {"floor_shoulder_pan_joint", -0.08},
-        {"floor_shoulder_lift_joint", -0.37},
-        {"floor_elbow_joint", 1.5},
+        {"floor_shoulder_lift_joint", -0.88},
+        {"floor_elbow_joint", 1.7},
         {"floor_wrist_1_joint", -2.9},
         {"floor_wrist_2_joint", -1.38},
         {"floor_wrist_3_joint", 0.0}};
