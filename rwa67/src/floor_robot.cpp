@@ -544,9 +544,9 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
         // Move up slightly
         waypoints.clear();
         waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
-                                              part_pose.position.z + 0.4, set_robot_orientation_(part_rotation)));
+                                              part_pose.position.z + 0.5, set_robot_orientation_(part_rotation)));
 
-        if (!move_through_waypoints_(waypoints, 0.3, 0.3))
+        if (!move_through_waypoints_(waypoints, 0.2, 0.2))
         {
             RCLCPP_ERROR(get_logger(), "Unable to move up");
             return false;
