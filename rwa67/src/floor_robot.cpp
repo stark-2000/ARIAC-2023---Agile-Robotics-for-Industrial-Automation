@@ -107,6 +107,12 @@ FloorRobot::FloorRobot()
         std::bind(
             &FloorRobot::drop_part_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
+
+    discard_part_srv_ = create_service<robot_msgs::srv::DiscardPart>(
+        "/commander/discard_part",
+        std::bind(
+            &FloorRobot::discard_part_srv_cb_, this,
+            std::placeholders::_1, std::placeholders::_2));
     
     move_robot_to_bin_srv_ = create_service<robot_msgs::srv::MoveRobotToBin>(
         "/commander/move_robot_to_bin",
@@ -735,58 +741,25 @@ void FloorRobot::discard_part_srv_cb_(
 
 bool FloorRobot::discard_part_(int agv_number, int quadrant)
 {
-    std::vector<geometry_msgs::msg::Pose> waypoints;
-    floor_robot_->setJointValueTarget("linear_actuator_joint", rail_positions_["agv" + std::to_string(agv_number)]);
-    floor_robot_->setJointValueTarget("floor_shoulder_pan_joint", 0);
-
-    if (!move_to_target_())
-    {
-        RCLCPP_ERROR(get_logger(), "Unable to move to AGV");
-        return false;
-    }
-
-    auto tray_pose = get_pose_in_world_frame_("agv" + std::to_string(agv_number) + "_tray");
-    auto part_drop_offset = Utils::build_pose(quad_offsets_[quadrant].first, quad_offsets_[quadrant].second, 0.0,
-                                              geometry_msgs::msg::Quaternion());
-
-    auto part_drop_pose = Utils::multiply_poses(tray_pose, part_drop_offset);
-
-    waypoints.push_back(Utils::build_pose(tray_pose.position.x, tray_pose.position.y,
-                                          tray_pose.position.z + 0.2, set_robot_orientation_(0)));
-    waypoints.push_back(Utils::build_pose(tray_pose.position.x, tray_pose.position.y,
-                                          tray_pose.position.z + pick_offset_, set_robot_orientation_(0)));
-
-    if (!move_through_waypoints_(waypoints, 0.3, 0.3))
-    {
-        RCLCPP_ERROR(get_logger(), "Unable to move robot to faulty part");
-        return false;
-    }
-
-    // set_gripper_state_(true);
-
-    wait_for_attach_completion_(5.0);
-
-    waypoints.clear();
-    waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
-                                          part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
-
-    if (!move_through_waypoints_(waypoints, 0.2, 0.1))
-    {
-        RCLCPP_ERROR(get_logger(), "Unable to pick up faulty part");
-        return false;
-    }
-
+   
+    std::string part_name = part_colors_[floor_robot_attached_part_.color] +
+                            "_" + part_types_[floor_robot_attached_part_.type] + "_" + std::to_string(part_counter_);
+    
     floor_robot_->setJointValueTarget(discard_bin_js_);
-    if (!move_through_waypoints_(waypoints, 0.2, 0.1))
+    if (!move_to_target_())
     {
         RCLCPP_ERROR(get_logger(), "Unable to move to discard bin");
         return false;
     }
-
-    std::string part_name = part_colors_[floor_robot_attached_part_.color] +
-                        "_" + part_types_[floor_robot_attached_part_.type];
-                            
     floor_robot_->detachObject(part_name);
+
+    floor_robot_->setNamedTarget("home");
+    if (!move_to_target_())
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move from discard bin");
+        return false;
+    }
+    
 
     return true;
 }
