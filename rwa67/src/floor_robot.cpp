@@ -733,12 +733,14 @@ void FloorRobot::discard_part_srv_cb_(
         else
         {
             res->success = false;
-            res->message = "Unable to discad part";
+            res->message = "Unable to discard part";
         }
     }
 
 bool FloorRobot::discard_part_(int agv_number, int quadrant)
 {
+    agv_number++;
+    quadrant++;
     std::vector<geometry_msgs::msg::Pose> waypoints;
     std::string part_name = part_colors_[floor_robot_attached_part_.color] +
                             "_" + part_types_[floor_robot_attached_part_.type] + "_" + std::to_string(part_counter_);
