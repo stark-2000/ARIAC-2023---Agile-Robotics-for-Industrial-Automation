@@ -546,7 +546,7 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
         // Move up slightly
         waypoints.clear();
         waypoints.push_back(Utils::build_pose(part_pose.position.x, part_pose.position.y,
-                                              part_pose.position.z + 0.2, set_robot_orientation_(part_rotation)));
+                                              part_pose.position.z + 0.4, set_robot_orientation_(part_rotation)));
 
         if (!move_through_waypoints_(waypoints, 0.3, 0.3))
         {
@@ -639,7 +639,7 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
 
     
     waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
-                                          part_drop_pose.position.z + 0.6, set_robot_orientation_(0)));
+                                          part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
 
     waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
                                           part_drop_pose.position.z + part_heights_[floor_robot_attached_part_.type] + drop_height_,
