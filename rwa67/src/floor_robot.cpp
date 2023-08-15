@@ -533,8 +533,6 @@ bool FloorRobot::move_robot_to_part_(int part_color, int part_type, geometry_msg
         std::string part_name = part_colors_[part_color] + "_" + part_types_[part_type] + "_" + std::to_string(part_counter_);
    
         add_single_model_to_planning_scene_(part_name, part_types_[part_type] + ".stl", part_pose);
-        RCLCPP_INFO_STREAM(get_logger(), part_name);
-        RCLCPP_INFO_STREAM(get_logger(), part_heights_[part_type]);
 
 
         // Attach tray to robot in planning scene
@@ -741,12 +739,23 @@ void FloorRobot::discard_part_srv_cb_(
 
 bool FloorRobot::discard_part_(int agv_number, int quadrant)
 {
-   
+    std::vector<geometry_msgs::msg::Pose> waypoints;
     std::string part_name = part_colors_[floor_robot_attached_part_.color] +
                             "_" + part_types_[floor_robot_attached_part_.type] + "_" + std::to_string(part_counter_);
     std::vector<std::string> object_id;
     object_id.push_back(part_name);
-    
+
+    geometry_msgs::msg::PoseStamped current_pose = floor_robot_->getCurrentPose();
+    waypoints.clear();
+    waypoints.push_back(Utils::build_pose(current_pose.pose.position.x, current_pose.pose.position.y,
+                                          current_pose.pose.position.z + 0.6, set_robot_orientation_(0)));
+    if (!move_through_waypoints_(waypoints, 0.2, 0.1))
+    {
+        RCLCPP_ERROR(get_logger(), "Unable to move part to AGV");
+        return false;
+    }
+
+
     floor_robot_->setJointValueTarget(discard_bin_js_);
     if (!move_to_target_())
     {
@@ -755,12 +764,6 @@ bool FloorRobot::discard_part_(int agv_number, int quadrant)
     }
     floor_robot_->detachObject(part_name);
     planning_scene_.removeCollisionObjects(object_id);
-    floor_robot_->setNamedTarget("home");
-    if (!move_to_target_())
-    {
-        RCLCPP_ERROR(get_logger(), "Unable to move from discard bin");
-        return false;
-    }
     
 
     return true;

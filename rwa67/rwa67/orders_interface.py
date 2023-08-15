@@ -720,11 +720,6 @@ class OrderManager(Node):
             self.get_logger().info('✅ Quality Check Passed.')
         else:
             self.get_logger().fatal(f'💀 Quality check : Faulty detected.')
-            if not valid_id:
-                self.get_logger().fatal(f'💀 Quality check : Invalid order id.')
-            if not incorrect_tray:
-                self.get_logger().fatal(f'💀 Quality check : Icnorrect Tray id.')
-
             if future.result().quadrant1.faulty_part:
                 self._faulty_parts_quadrant[KittingPart.QUADRANT1] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q1')
