@@ -195,6 +195,8 @@ private:
 
     rclcpp::Service<robot_msgs::srv::DropPart>::SharedPtr drop_part_srv_;
 
+    rclcpp::Service<robot_msgs::srv::DiscardPart>::SharedPtr discard_part_srv_;
+
     rclcpp::Service<robot_msgs::srv::MoveRobotToBin>::SharedPtr move_robot_to_bin_srv_;
 
     int tray_counter_;
@@ -730,13 +732,13 @@ private:
         {"floor_wrist_3_joint", 0.0}};
     //! Joint value targets for midde discard bin
     std::map<std::string, double> discard_bin_js_ = {
-        {"linear_actuator_joint", -0.1},
+        {"linear_actuator_joint", 0.0},
         {"floor_shoulder_pan_joint", -0.08},
-        {"floor_shoulder_lift_joint", -0.13},
+        {"floor_shoulder_lift_joint", -0.37},
         {"floor_elbow_joint", 1.5},
-        {"floor_wrist_1_joint", -2.93},
-        {"floor_wrist_2_joint", -1.57},
-        {"floor_wrist_3_joint", 0.07}};
+        {"floor_wrist_1_joint", -2.9},
+        {"floor_wrist_2_joint", -1.38},
+        {"floor_wrist_3_joint", 0.0}};
     //! AGV locations for different AGVs.
     /*!
         The first value is the AGV number and the second value is the location of the AGV, the latter can be one of the following:

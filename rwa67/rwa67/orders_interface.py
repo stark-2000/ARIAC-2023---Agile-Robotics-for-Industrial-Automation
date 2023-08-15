@@ -133,6 +133,7 @@ class OrderManager(Node):
         self._parts_quality_check = False
         self._dropped_tray = False
         self._dropped_part = False
+        self._discarded_part = False
 
         # flags for errors
         self._table_path_failed = False
@@ -472,17 +473,12 @@ class OrderManager(Node):
             closest_table = TrayStations.KTS_2.value
 
         self._move_robot_to_table(closest_table)
-        # self._move_robot_to_table(TrayStations.KTS_1.value)
         while (not self._moved_robot_to_table):
-            # if self._table_path_failed == True:
-            #     self._move_robot_to_table(TrayStations.KTS_2.value)
-            #     self._table_path_failed = False
             continue
         self._moved_robot_to_table = False
 
-        ######## ToDo MAKE ME NOT FIXED #######
-        
-        self._enter_tool_changer("kts" + str(closest_table), GripperTypes.PART_GRIPPER.value)
+        self._enter_tool_changer(
+            "kts" + str(closest_table), GripperTypes.PART_GRIPPER.value)
         while (not self._entered_tool_changer):
             continue
         self._entered_tool_changer = False
@@ -492,12 +488,15 @@ class OrderManager(Node):
             continue
         self._changed_gripper = False
 
-        self._exit_tool_changer("kts" + str(closest_table), GripperTypes.PART_GRIPPER.value)
+        self._exit_tool_changer(
+            "kts" + str(closest_table), GripperTypes.PART_GRIPPER.value)
         while (not self._exited_tool_changer):
             continue
         self._exited_tool_changer = False
 
-        for order_part in order.parts:
+        order_parts = deque(order.parts)
+        while (len(order_parts) > 0):
+            order_part = order_parts.popleft()
             self._activate_gripper()
             while (not self._activated_gripper):
                 continue
@@ -536,46 +535,43 @@ class OrderManager(Node):
                 continue
             self._moved_part_to_agv = False
 
+            self.perform_quality_check(order.order_id)
+            while (not self._parts_quality_check):
+                continue
+            self._parts_quality_check = False
+
+            if self._faulty_parts_quadrant[order_part.quadrant]:
+                self.get_logger().warn(
+                    f"Faulty Part found.")
+                self._discard_part(target_agv, order_part.quadrant)
+                while (not self._discarded_part):
+                    continue
+                self._discarded_part = False
+                self._deactivate_gripper()
+                while (not self._deactivated_gripper):
+                    continue
+                self._deactivated_gripper = False
+                order_parts.appendleft(order_part)
+                self.get_logger().warn(
+                    f"put part back in list")
+                continue
+            else:
+                self.get_logger().warn(
+                    f"No Faulty Part found.")
+
             self._deactivate_gripper()
             while (not self._deactivated_gripper):
                 continue
             self._deactivated_gripper = False
 
             self._drop_part(target_agv, order_part.quadrant)
-            while(not self._dropped_part):
+            while (not self._dropped_part):
                 continue
             self._dropped_part = False
-
-            
-
-            # self.perform_quality_check(order.order_id)
-            # while (not self._parts_quality_check):
-            #     continue
-            # self._parts_quality_check = False
-
-            # if(self._faulty_parts_quadrant[order_part.quadrant]):
-            #     self._dis
-
-
-            self.perform_quality_check(order.order_id)
-            while (not self._parts_quality_check):
-                self.get_logger().warn(
-                    f"Looping...")
-                continue
-            self._parts_quality_check = False
-            
-            if self._faulty_parts_quadrant[order_part.quadrant]:
-                self.get_logger().warn(
-                    f"Faulty Part found.")
-            else:
-                self.get_logger().warn(
-                    f"No Faulty Part found.")
 
         #     self.place_part(order_part.part.color, order_part.part.type, order.tray_id,
         #                     order_part.quadrant)
         self.complete_order()
-
-    
 
     def _move_robot_to_table(self, table_id):
         '''
@@ -711,7 +707,6 @@ class OrderManager(Node):
         valid_id = future.result().valid_id
         incorrect_tray = future.result().incorrect_tray
 
-
         if quality_status:
             self.get_logger().info('✅ Quality Check Passed.')
         else:
@@ -733,7 +728,6 @@ class OrderManager(Node):
             if future.result().quadrant4.faulty_part:
                 self._faulty_parts_quadrant[KittingPart.QUADRANT4] = True
                 self.get_logger().fatal(f'💀 Quality check : Faulty Part in Q4')
-        
 
         self._parts_quality_check = True
 
@@ -984,5 +978,24 @@ class OrderManager(Node):
         if future.result().success:
             self.get_logger().info(f'✅ {message}')
             self._dropped_part = True
+        else:
+            self.get_logger().fatal(f'💀 {message}')
+
+    def _discard_part(self, agv_number, quadrant):
+
+        while not self._discard_part_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service not available, waiting...')
+
+        request = DiscardPart.Request()
+        request.agv_number = agv_number
+        request.quadrant = quadrant
+        future = self._discard_part_cli.call_async(request)
+        future.add_done_callback(self._discard_part_done)
+
+    def _discard_part_done(self, future):
+        message = future.result().message
+        if future.result().success:
+            self.get_logger().info(f'✅ {message}')
+            self._discarded_part = True
         else:
             self.get_logger().fatal(f'💀 {message}')
