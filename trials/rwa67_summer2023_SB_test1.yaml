@@ -123,4 +123,4 @@ challenges:
       quadrant2: true
   - faulty_part:
       order_id: 'KITTING4'
-      quadrant1: true
+      quadrant2: true
