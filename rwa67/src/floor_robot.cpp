@@ -72,7 +72,8 @@ FloorRobot::FloorRobot()
         std::bind(
             &FloorRobot::move_tray_to_agv_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
-
+    
+    // service to drop tray on an agv 
     drop_tray_srv_ = create_service<robot_msgs::srv::DropTray>(
         "/commander/drop_tray",
         std::bind(&FloorRobot::drop_tray_srv_cb_, this,
@@ -90,30 +91,35 @@ FloorRobot::FloorRobot()
             &FloorRobot::exit_tool_changer_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
+    // service to move robot to a part on a bin
     move_robot_to_part_srv_ = create_service<robot_msgs::srv::MoveRobotToPart>(
         "/commander/move_robot_to_part",
         std::bind(
             &FloorRobot::move_robot_to_part_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
     
+    // service to move robot with a part to an agv
     move_part_to_agv_srv_ = create_service<robot_msgs::srv::MovePartToAGV>(
         "/commander/move_part_to_agv",
         std::bind(
-            &FloorRobot::move_part_to_agv_srv_cb, this,
+            &FloorRobot::move_part_to_agv_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
+    // service to move robot to drop a part on an agv
     drop_part_srv_ = create_service<robot_msgs::srv::DropPart>(
         "/commander/drop_part",
         std::bind(
             &FloorRobot::drop_part_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
 
+    // service to move robot to discard a faulty part
     discard_part_srv_ = create_service<robot_msgs::srv::DiscardPart>(
         "/commander/discard_part",
         std::bind(
             &FloorRobot::discard_part_srv_cb_, this,
             std::placeholders::_1, std::placeholders::_2));
     
+    // service to move robot to a bin 
     move_robot_to_bin_srv_ = create_service<robot_msgs::srv::MoveRobotToBin>(
         "/commander/move_robot_to_bin",
         std::bind(
@@ -324,20 +330,6 @@ bool FloorRobot::move_tray_to_agv(int agv_number)
         RCLCPP_ERROR(get_logger(), "Unable to move tray to AGV");
         return false;
     }
-
-    // MOVED TO NEW SERVICE - DROP_TRAY_()
-    // floor_robot_->detachObject(tray_name);
-
-    // // Move up slightly
-    // waypoints.clear();
-    // waypoints.push_back(Utils::build_pose(agv_tray_pose.position.x, agv_tray_pose.position.y,
-    //                                       agv_tray_pose.position.z + 0.2, set_robot_orientation_(agv_rotation)));
-
-    // if (!move_through_waypoints_(waypoints, 0.2, 0.2))
-    // {
-    //     RCLCPP_ERROR(get_logger(), "Unable to move up");
-    //     return false;
-    // }
 
     return true;
 }
@@ -597,7 +589,7 @@ void FloorRobot::move_robot_to_bin_srv_cb(
 //=============================================//
 
 //=============================================//
-void FloorRobot::move_part_to_agv_srv_cb(
+void FloorRobot::move_part_to_agv_srv_cb_(
     robot_msgs::srv::MovePartToAGV::Request::SharedPtr req, 
     robot_msgs::srv::MovePartToAGV::Response::SharedPtr res)
     {
@@ -642,19 +634,6 @@ bool FloorRobot::move_part_to_agv_(int agv_number, int quadrant)
     waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
                                           part_drop_pose.position.z + part_heights_[floor_robot_attached_part_.type] + drop_height_,
                                           set_robot_orientation_(0)));
-
-    // move_through_waypoints_(waypoints, 0.3, 0.3);
-
-    // // MOVED TO NEW SERVICE - DROP_PART_SRV_()
-    // std::string part_name = part_colors_[floor_robot_attached_part_.color] +
-    //                         "_" + part_types_[floor_robot_attached_part_.type] + "" + std::to_string(part_counter_ -1);
-    // RCLCPP_INFO_STREAM(get_logger(), part_colors_[floor_robot_attached_part_.color]);
-    // RCLCPP_INFO_STREAM(get_logger(), part_types_[floor_robot_attached_part_.type]);
-    // floor_robot_->detachObject(part_name);
-    // RCLCPP_INFO_STREAM(get_logger(), part_name);
-    // waypoints.clear();
-    // waypoints.push_back(Utils::build_pose(part_drop_pose.position.x, part_drop_pose.position.y,
-    //                                       part_drop_pose.position.z + 0.3, set_robot_orientation_(0)));
 
     if (!move_through_waypoints_(waypoints, 0.3, 0.3))
     {

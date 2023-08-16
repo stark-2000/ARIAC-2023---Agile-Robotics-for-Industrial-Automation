@@ -182,25 +182,25 @@ private:
     rclcpp::Service<robot_msgs::srv::MoveRobotToTray>::SharedPtr move_robot_to_tray_srv_;
     //! Service to move the robot to an AGV after picking a tray
     rclcpp::Service<robot_msgs::srv::MoveTrayToAGV>::SharedPtr move_tray_to_agv_srv_;
-
+    //! Service to drop a tray on AGV
     rclcpp::Service<robot_msgs::srv::DropTray>::SharedPtr drop_tray_srv_;
-
     //! Service to move the end effector inside a tool changer
     rclcpp::Service<robot_msgs::srv::EnterToolChanger>::SharedPtr enter_tool_changer_srv_;
     //! Service to move the end effector outside a tool changer
     rclcpp::Service<robot_msgs::srv::ExitToolChanger>::SharedPtr exit_tool_changer_srv_;
-
+    //! Service to move the robot to a part on bins and pick it up
     rclcpp::Service<robot_msgs::srv::MoveRobotToPart>::SharedPtr move_robot_to_part_srv_;
-
+    //! Service to move the part to agv
     rclcpp::Service<robot_msgs::srv::MovePartToAGV>::SharedPtr move_part_to_agv_srv_;
-
+    //! Service to drop the part on an AGV tray
     rclcpp::Service<robot_msgs::srv::DropPart>::SharedPtr drop_part_srv_;
-
+    //! Service to discard a faulty part on an AGV tray
     rclcpp::Service<robot_msgs::srv::DiscardPart>::SharedPtr discard_part_srv_;
-
+    //! Service to move the robot to a bin
     rclcpp::Service<robot_msgs::srv::MoveRobotToBin>::SharedPtr move_robot_to_bin_srv_;
-
+    //! Integer to keep track of number of trays in the competition to simplify kitting assembly
     int tray_counter_;
+    //! Integer to keep track of number of parts in the competition to simplify kitting assembly
     int part_counter_;
 
     /**
@@ -241,6 +241,12 @@ private:
     move_tray_to_agv_srv_cb_(
         robot_msgs::srv::MoveTrayToAGV::Request::SharedPtr req_, robot_msgs::srv::MoveTrayToAGV::Response::SharedPtr res_);
 
+    /**
+     * @brief Callback function for the service /commander/drop_tray
+     * 
+     * @param req_ Shared pointer to robot_msgs::srv::DropTray::Request
+     * @param res_ Shared pointer to robot_msgs::srv::DropTray::Response
+     */
     void
     drop_tray_srv_cb_(
         robot_msgs::srv::DropTray::Request::SharedPtr req_, robot_msgs::srv::DropTray::Response::SharedPtr res_);
@@ -265,14 +271,32 @@ private:
     exit_tool_changer_srv_cb_(
         robot_msgs::srv::ExitToolChanger::Request::SharedPtr req_, robot_msgs::srv::ExitToolChanger::Response::SharedPtr res_);
 
+    /**
+     * @brief Callback function for the service /commander/move_robot_
+     * 
+     * @param req_ Shared pointer to robot_msgs::srv::MoveRobotToPart::Request
+     * @param res_ Shared pointer to robot_msgs::srv::MoveRobotToPart::Response
+     */
     void 
     move_robot_to_part_srv_cb_(
         robot_msgs::srv::MoveRobotToPart::Request::SharedPtr req_, robot_msgs::srv::MoveRobotToPart::Response::SharedPtr res_);
 
+    /**
+     * @brief Callback function for the service /commander/move_part_to_agv_
+     * 
+     * @param req_ Shared pointer to robot_msgs::srv::MovePartToAGV::Request
+     * @param res_ Shared pointer to robot_msgs::srv::MovePartToAGV::Response
+     */
     void
-    move_part_to_agv_srv_cb(
+    move_part_to_agv_srv_cb_(
         robot_msgs::srv::MovePartToAGV::Request::SharedPtr req_, robot_msgs::srv::MovePartToAGV::Response::SharedPtr res_);
 
+    /**
+     * @brief Callback function for the service /commander/drop_part_
+     * 
+     * @param req_ Shared pointer to robot_msgs::srv::DropPart::Request
+     * @param res_ Shared pointer to robot_msgs::srv::DropPart::Response
+     */
     void
     drop_part_srv_cb_(
         robot_msgs::srv::DropPart::Request::SharedPtr req_, robot_msgs::srv::DropPart::Response::SharedPtr res_);
@@ -324,6 +348,14 @@ private:
      */
     bool move_robot_to_tray_(int tray_id, const geometry_msgs::msg::Pose &tray_pose);
 
+    /**
+     * @brief Provide motion to the floor robot to drop the tray on an AGV
+     * 
+     * @param tray_id 
+     * @param agv_number 
+     * @return true 
+     * @return false 
+     */
     bool drop_tray_(int tray_id, int agv_number);
 
     /**
@@ -354,10 +386,36 @@ private:
      */
     bool exit_tool_changer_(std::string changing_station, std::string gripper_type);
 
+    /**
+     * @brief Provide motion to the floor robot to move to a part to pick it up from a bin
+     * 
+     * @param part_color 
+     * @param part_type 
+     * @param part_pose 
+     * @param bin_location 
+     * @return true 
+     * @return false 
+     */
     bool move_robot_to_part_(int part_color, int part_type, geometry_msgs::msg::Pose& part_pose, std::string bin_location);
 
+    /**
+     * @brief Provide motion to the floor robot to move part to an AGV to drop it
+     * 
+     * @param agv_number 
+     * @param quadrant 
+     * @return true 
+     * @return false 
+     */
     bool move_part_to_agv_(int agv_number, int quadrant);
 
+    /**
+     * @brief Provide motion to the floor robot to drop a part on an AGV
+     * 
+     * @param agv_number 
+     * @param quadrant 
+     * @return true 
+     * @return false 
+     */
     bool drop_part_(int agv_number, int quadrant);
     
     /**
