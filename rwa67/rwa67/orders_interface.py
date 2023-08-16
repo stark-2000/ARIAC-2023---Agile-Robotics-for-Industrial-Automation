@@ -424,7 +424,7 @@ class OrderManager(Node):
         self._move_robot_to_table(station.value)
         while (not self._moved_robot_to_table):
             if(self._failure):
-                self.get_logger().warn(" ---> Moving robot to table failed. Trying agian...")
+                self.get_logger().warn(" ---> Moving robot to table failed. Trying again...")
                 self._move_robot_to_table(station.value)
                 self._failure = False
             continue
@@ -460,7 +460,7 @@ class OrderManager(Node):
         self._move_tray_to_agv(target_agv)
         while (not self._moved_tray_to_agv):
             if(self._failure):
-                self.get_logger().warn(" ---> Moving tray to ATV failed. Trying agian...")
+                self.get_logger().warn(" ---> Moving tray to ATV failed. Trying again...")
                 self._move_tray_to_agv(target_agv)
                 self._failure = False
             continue
@@ -554,7 +554,7 @@ class OrderManager(Node):
                 self._discard_part(target_agv, order_part.quadrant)
                 while (not self._discarded_part):
                     if(self._failure):
-                         self.get_logger().warn(" ---> Moving tray to ATV failed. Trying agian...")
+                         self.get_logger().warn(" ---> Moving tray to ATV failed. Trying again...")
                          self._discard_part(target_agv, order_part.quadrant)
                          self._failure = False
                     continue
@@ -579,7 +579,7 @@ class OrderManager(Node):
             self._drop_part(target_agv, order_part.quadrant)
             while (not self._dropped_part):
                 if(self._failure):
-                    self.get_logger().warn(" ---> Dropping part failed. Trying agian...")
+                    self.get_logger().warn(" ---> Dropping part failed. Trying again...")
                     self._drop_part(target_agv, order_part.quadrant)
                     self._failure = False
                 continue

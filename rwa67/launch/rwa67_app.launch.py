@@ -54,7 +54,7 @@ def generate_launch_description():
         )
     )
     
-    # Set up an action to include another launach file, with launch arguments
+    # Set up an action to include another launch file, with launch arguments
     included_launch = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource(
                 pkg_dir + '/launch/ariac.launch.py'), launch_arguments={'competitor_pkg': 'rwa67', 'sensor_conﬁg': 'sensors', 

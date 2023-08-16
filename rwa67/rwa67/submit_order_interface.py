@@ -61,6 +61,12 @@ class Submit_Orders(Node):
             'ariac/agv3_status',
             lambda msg: self.listener_callback(msg, agv_no=3),
             10) 
+         #Create subscriber to topic "ariac/agv3_status" to get the status of agv4
+        self.agv3_status_subscriber = self.create_subscription(
+            AGVStatus,
+            'ariac/agv4_status',
+            lambda msg: self.listener_callback(msg, agv_no=4),
+            10) 
 
         
 

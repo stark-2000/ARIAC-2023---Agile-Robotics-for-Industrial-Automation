@@ -257,9 +257,6 @@ bool FloorRobot::move_robot_to_tray_(int tray_id, const geometry_msgs::msg::Pose
     if (floor_gripper_state_.attached){
 
         // Add tray to planning scene
-        // TODO: This will generate all sorts of problems if "kit_tray_3" already exists in the planning scene
-        // It can happen that you need to build 2 kits and both use tray id 3.
-        // You should find a way to name each tray differently
         std::string tray_name = "kit_tray_" + std::to_string(tray_id) + "_" + std::to_string(tray_counter_);
 
         add_single_model_to_planning_scene_(tray_name, "kit_tray.stl", tray_pose);

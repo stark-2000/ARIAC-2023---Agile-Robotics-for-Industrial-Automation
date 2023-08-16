@@ -6,7 +6,7 @@ gazebo_state_logging: false # options: true or false
 
 
 kitting_trays: # Which kitting trays will be spawn
-  tray_ids: [1, 2, 3, 4] 
+  tray_ids: [3, 5, 7, 7] 
   slots: [2, 3, 4, 6]
 
 parts:
@@ -66,7 +66,7 @@ orders:
     priority: false
     kitting_task:
       agv_number: 3
-      tray_id: 8
+      tray_id: 5
       destination: 'warehouse'
       products:
         - type: 'battery'
@@ -85,7 +85,7 @@ orders:
     priority: false
     kitting_task:
       agv_number: 4
-      tray_id: 8
+      tray_id: 7
       destination: 'warehouse'
       products:
         - type: 'sensor'
@@ -104,7 +104,7 @@ orders:
     priority: false
     kitting_task:
       agv_number: 1
-      tray_id: 4
+      tray_id: 7
       destination: 'warehouse'
       products:
         - type: 'battery'

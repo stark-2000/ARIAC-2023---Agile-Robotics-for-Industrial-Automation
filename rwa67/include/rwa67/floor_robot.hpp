@@ -3,7 +3,7 @@
  * \section Installation
  *
  * - cd ~/ariac_ws/src
- * - git clone https://github.com/zeidk/enpm663_summer2023.git -b lecture8
+ * - git clone git@github.com:sbadshah96/ENPM663_RWA.git -b rwa67
  * - cd ~/ariac_ws
  * - rosdep install --from-paths src -y -i --rosdistro galactic
  * - colcon build
@@ -13,8 +13,10 @@
  *  \brief     Class for the floor robot.
  *  \details   The floor robot is capable of completing kitting tasks.
  *  \author    Zeid Kootbally
- *  \author    John Doe (add your teammate's name here)
- *  \version   0.1
+ *  \author    Shreejay Badshah
+ *  \author    Ian Serbin
+ *  \author    Tej Kiran
+ *  \version   0.2
  *  \date      July 2023
  *  \warning   Improper use can crash your application
  *  \copyright GNU Public License.
@@ -789,7 +791,7 @@ private:
         {"floor_wrist_1_joint", -1.57},
         {"floor_wrist_2_joint", -1.57},
         {"floor_wrist_3_joint", 0.0}};
-    //! Joint value targets for midde discard bin
+    //! Joint value targets for middle discard bin
     std::map<std::string, double> discard_bin_js_ = {
         {"linear_actuator_joint", 0.0},
         {"floor_shoulder_pan_joint", -0.08},

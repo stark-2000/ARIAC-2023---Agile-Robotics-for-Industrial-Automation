@@ -10,20 +10,20 @@ kitting_trays: # Which kitting trays will be spawn
   slots: [6, 3, 4]
 
 parts:
-  bins: # bin params - 8 total bins each bin has nine total slots (1-9)
-    bin3:
+  bins: 
+    bin1:
       - type: 'battery'
         color: 'green'
         slots: [1]
-    bin4:
+    bin2:
       - type: 'battery'
         color: 'green'
         slots: [2]
-    bin7:
+    bin5:
       - type: 'battery'
         color: 'green'
         slots: [2]
-    bin8:
+    bin6:
       - type: 'battery'
         color: 'green'
         slots: [2, 9]
@@ -56,9 +56,5 @@ challenges:
   - faulty_part:
       order_id: 'KITTING1'
       quadrant1: true
-  - faulty_part:
-      order_id: 'KITTING1'
       quadrant2: true
-  - faulty_part:
-      order_id: 'KITTING1'
       quadrant3: true
