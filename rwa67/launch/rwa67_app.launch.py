@@ -58,7 +58,7 @@ def generate_launch_description():
     included_launch = launch.actions.IncludeLaunchDescription(
         launch.launch_description_sources.PythonLaunchDescriptionSource(
                 pkg_dir + '/launch/ariac.launch.py'), launch_arguments={'competitor_pkg': 'rwa67', 'sensor_conﬁg': 'sensors', 
-                                                                        'trial_name': 'rwa67_summer2023'}.items())
+                                                                        'trial_name': 'rwa67_summer2023_SB_test1'}.items())
     ld.add_action(moveit)
     ld.add_action(included_launch)
     ld.add_action(service_client_exe_node)
