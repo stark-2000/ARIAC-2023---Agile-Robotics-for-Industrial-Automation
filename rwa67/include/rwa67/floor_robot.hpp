@@ -791,7 +791,7 @@ private:
         {"floor_wrist_1_joint", -1.57},
         {"floor_wrist_2_joint", -1.57},
         {"floor_wrist_3_joint", 0.0}};
-    //! Joint value targets for midde discard bin
+    //! Joint value targets for middle discard bin
     std::map<std::string, double> discard_bin_js_ = {
         {"linear_actuator_joint", 0.0},
         {"floor_shoulder_pan_joint", -0.08},
