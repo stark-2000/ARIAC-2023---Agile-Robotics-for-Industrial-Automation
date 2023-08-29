@@ -18,3 +18,7 @@ Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
     ```
     ros2 launch rwa67 rwa67_app.launch.py
     ```
+
+## Documentation:
+- Project Report: [click here](./Documentation/Report/Report_RWA67)
+- Project Presentation: [click here](./Documentation/Presentation/ENPM663_RWA67_PPT)
