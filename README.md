@@ -20,5 +20,5 @@ Repo for RWAs of ENPM663 - Building Manufacturing Robots Software Systems
     ```
 
 ## Documentation:
-- Project Report: [click here](./Documentation/Report/Report_RWA67.pdf)
+- Project Report: [click here](./Documentation/Report/ENPM663_RWA67_Report.pdf)
 - Project Presentation: [click here](./Documentation/Presentation/ENPM663_RWA67_PPT.pdf)
