@@ -1,6 +1,7 @@
 ## Overview: 
 Developed an 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗮𝗹 𝗥𝗼𝗯𝗼𝘁𝗶𝗰 𝗠𝗮𝗻𝘂𝗳𝗮𝗰𝘁𝘂𝗿𝗶𝗻𝗴 𝗦𝘆𝘀𝘁𝗲𝗺 featuring 𝗔𝗚𝗩𝘀, 𝗺𝗮𝗻𝗶𝗽𝘂𝗹𝗮𝘁𝗼𝗿𝘀, and sensors for automated component manufacturing in a 𝗥𝗢𝗦𝟮 Gazebo environment. Modeled after the 𝗔𝗥𝗜𝗔𝗖 𝟮𝟬𝟮𝟯 challenge, focusing on agility and autonomy in 𝗸𝗶𝘁𝘁𝗶𝗻𝗴 𝘁𝗮𝘀𝗸𝘀.
 
+- More about the challenge: https://www.nist.gov/el/intelligent-systems-division-73500/agile-robotics-industrial-automation-competition/about-ariac 
 
 ## Key Achievements:
 ✦ 𝗖𝗼𝘂𝗿𝘀𝗲𝘄𝗼𝗿𝗸 𝗦𝗶𝗺𝘂𝗹𝗮𝘁𝗶𝗼𝗻:
@@ -14,6 +15,11 @@ Developed an 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗮𝗹 𝗥𝗼𝗯𝗼𝘁𝗶�
 
 ✦ 𝗔𝘂𝘁𝗼𝗻𝗼𝗺𝘆 𝗮𝗻𝗱 𝗣𝗿𝗼𝗱𝘂𝗰𝘁𝗶𝘃𝗶𝘁𝘆 𝗙𝗼𝗰𝘂𝘀:
 - Aligned with ARIAC's objective of enhancing industrial robot 𝗮𝘂𝘁𝗼𝗻𝗼𝗺𝘆 and productivity, minimizing 𝗵𝘂𝗺𝗮𝗻 𝗶𝗻𝘁𝗲𝗿𝘃𝗲𝗻𝘁𝗶𝗼𝗻 in complex manufacturing processes.
+
+
+## Simulation Environment:
+
+![environment](https://github.com/stark-2000/ARIAC-2023---Agile-Robotics-for-Industrial-Automation/assets/78305300/74ca77f0-077d-4e7a-97e6-0e40eab0bc63)
 
 
 ## Instructions to run the simuation:
