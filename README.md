@@ -22,7 +22,7 @@ Developed an 𝗜𝗻𝗱𝘂𝘀𝘁𝗿𝗶𝗮𝗹 𝗥𝗼𝗯𝗼𝘁𝗶�
 ![environment](https://github.com/stark-2000/ARIAC-2023---Agile-Robotics-for-Industrial-Automation/assets/78305300/74ca77f0-077d-4e7a-97e6-0e40eab0bc63)
 
 
-## Instructions to run the simuation:
+## Instructions to run the simulation:
 - This project has one launch file which launches the gazebo launch file and all other c++ and python nodes
 - robot_msgs package has to be built first before building the package rwa67.
 
